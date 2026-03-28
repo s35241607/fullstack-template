@@ -1,0 +1,63 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend — Local (uv)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "uv run uvicorn app.main:app --reload --port 8000",
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "PATH": "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\nodejs;C:\\Users\\User\\AppData\\Roaming\\npm;${env:PATH}"
+      },
+      "serverReadyAction": {
+        "pattern": "Application startup complete",
+        "uriFormat": "http://localhost:8000/docs",
+        "action": "openExternally"
+      }
+    },
+    {
+      "name": "Backend — Docker (attach debugpy)",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": { "host": "localhost", "port": 5678 },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/backend",
+          "remoteRoot": "/app"
+        }
+      ],
+      "justMyCode": true
+    },
+    {
+      "name": "Frontend (Vite)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev",
+      "cwd": "${workspaceFolder}/frontend",
+      "env": {
+        "PATH": "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\nodejs;C:\\Users\\User\\AppData\\Roaming\\npm;${env:PATH}"
+      },
+      "serverReadyAction": {
+        "pattern": "Local:\\s+(http://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack 🚀 (Local)",
+      "configurations": ["Backend — Local (uv)", "Frontend (Vite)"],
+      "stopAll": true,
+      "presentation": { "order": 1 }
+    },
+    {
+      "name": "Full Stack 🐳 (Docker)",
+      "configurations": ["Backend — Docker (attach debugpy)", "Frontend (Vite)"],
+      "preLaunchTask": "Docker Compose Up",
+      "stopAll": true,
+      "presentation": { "order": 2 }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: app_db
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d app_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "5678:5678"   # debugpy remote attach
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: postgresql+asyncpg://app_user:app_pass@db:5432/app_db
+      DB_ECHO: "false"
+    volumes:
+      - ./backend:/app          # live-reload: mount source into container
+      - /app/.venv              # anonymous volume: keeps container's Linux venv, hides host Windows .venv
+    command: >
+      uv run python -m debugpy --listen 0.0.0.0:5678
+      -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:

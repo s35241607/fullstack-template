@@ -1,0 +1,56 @@
+{
+  // ── Python / Backend ──────────────────────────────────────────────
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/Scripts/python.exe",
+  "python.analysis.extraPaths": ["${workspaceFolder}/backend"],
+  "python.analysis.typeCheckingMode": "basic",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  // ── TypeScript / Vue / Frontend ────────────────────────────────────
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  // ── Editor ────────────────────────────────────────────────────────
+  "editor.formatOnSave": true,
+  "editor.rulers": [88],
+  "files.eol": "\n",
+
+  // ── Terminal — 修正 SYSTEM 帳號下環境變數缺失問題 ─────────────────
+  // 明確將 Node.js 與使用者 npm 全域路徑注入 Windows terminal 環境，
+  // 避免 VS Code 以 SYSTEM 帳號啟動時吃不到使用者 PATH 的問題
+  "terminal.integrated.env.windows": {
+    "PATH": "C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\nodejs;C:\\Users\\User\\AppData\\Roaming\\npm;${env:PATH}"
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "args": ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "RemoteSigned"],
+      "icon": "terminal-powershell"
+    }
+  }
+}

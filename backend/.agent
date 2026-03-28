@@ -1,0 +1,88 @@
+# Backend Agent Instructions
+
+## Architecture: Domain-Driven Design (DDD)
+
+### Layer Rules (strict dependency direction)
+```
+interfaces → application → domain ← infrastructure
+```
+- **domain/**: Pure Python. No framework imports. No SQLAlchemy. Only business logic.
+- **application/**: Use cases (CQRS). Depends only on domain interfaces.
+- **infrastructure/**: SQLAlchemy models, repository implementations, config. Implements domain interfaces.
+- **interfaces/**: FastAPI routers + Pydantic schemas. Calls application layer only.
+
+### Adding a New Domain (e.g., `order`)
+1. `domain/order/entities/order.py` — extend `Entity`
+2. `domain/order/repositories/order_repository.py` — extend `Repository[Order]`
+3. `domain/order/services/` — domain services if needed
+4. `application/order/handlers/order_command_handler.py` — use cases
+5. `application/order/handlers/order_query_handler.py` — read operations
+6. `infrastructure/database/models/order_model.py` — SQLAlchemy model
+7. `infrastructure/database/repositories/sqlalchemy_order_repository.py` — implement interface
+8. `interfaces/api/v1/schemas/order_schema.py` — Pydantic request/response
+9. `interfaces/api/v1/routers/order_router.py` — FastAPI router
+10. Register router in `app/main.py`
+
+## TDD Workflow
+1. Write failing test first (`tests/unit/domain/` for entities, `tests/unit/application/` for handlers)
+2. Implement the minimal code to pass
+3. Refactor and ensure all tests still pass
+4. Add integration tests in `tests/integration/`
+
+```bash
+# Run tests
+uv run pytest tests/unit/ -v --no-cov        # unit tests only
+uv run pytest tests/ -v                       # all tests with coverage
+
+# Lint and format
+uv run ruff check app/ tests/
+uv run ruff format app/ tests/
+uv run mypy app/
+```
+
+## Code Conventions
+
+### Entities
+```python
+from app.domain.shared.entity import Entity
+from app.domain.shared.exceptions import BusinessRuleViolationError
+
+class MyEntity(Entity):
+    def __init__(self, name: str) -> None:
+        super().__init__()
+        self._validate(name)
+        self.name = name
+    
+    @staticmethod
+    def _validate(name: str) -> None:
+        if not name:
+            raise BusinessRuleViolationError("Name cannot be empty")
+```
+
+### Repository Interface
+```python
+from abc import abstractmethod
+from app.domain.shared.repository import Repository
+
+class MyRepository(Repository[MyEntity]):
+    @abstractmethod
+    async def find_by_name(self, name: str) -> MyEntity | None: ...
+```
+
+### SQLAlchemy Models
+- Use `Mapped[T]` typed column declarations (SQLAlchemy 2.x style)
+- Store UUID as UUID type (not String)
+- Keep ORM models thin — business logic belongs in domain entities
+
+### Pydantic Schemas
+- Request schemas: `*Request` suffix
+- Response schemas: `*Response` suffix
+- Use `model_config = {"from_attributes": True}` for ORM models
+
+## Environment Variables
+Configure via `.env` file (never commit):
+```
+DB_DB_URL=postgresql+asyncpg://user:pass@localhost/dbname
+DB_DB_ECHO=false
+DEBUG=false
+```

@@ -1,0 +1,95 @@
+# Frontend Agent Instructions
+
+## Tech Stack
+- **Vue 3** with `<script setup lang="ts">` (Composition API)
+- **TypeScript** — strict mode, no `any`
+- **Tailwind CSS v4** — utility-first CSS via `@tailwindcss/vite`
+- **shadcn-vue** — headless UI components built on `radix-vue`
+- **VueUse** — composable utilities (`@vueuse/core`)
+- **Pinia** — state management
+- **Axios** — HTTP client (via `src/services/api.ts`)
+- **Prettier** — code formatting
+- **ESLint** — linting (TypeScript + Vue rules)
+
+## Project Structure
+```
+src/
+├── components/
+│   └── ui/            # shadcn-vue components (Button, Card, etc.)
+├── composables/       # VueUse-style composables (useItems.ts, etc.)
+├── lib/
+│   └── utils.ts       # cn() helper for Tailwind class merging
+├── services/
+│   └── api.ts         # Axios API client + typed endpoint functions
+├── stores/            # Pinia stores (global state)
+├── views/             # Page-level components
+├── router/            # Vue Router configuration
+└── style.css          # Tailwind CSS + shadcn CSS variables
+```
+
+## Conventions
+
+### Components
+- All components use `<script setup lang="ts">`
+- Use `defineProps<{}>()` with TypeScript interfaces (not runtime validators)
+- UI primitives go in `src/components/ui/` (shadcn-vue pattern)
+- Feature components go in `src/components/`
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { Button } from '@/components/ui/button'
+
+const count = ref(0)
+</script>
+
+<template>
+  <Button @click="count++">Count: {{ count }}</Button>
+</template>
+```
+
+### Composables
+- Prefix with `use` (e.g., `useItems`, `useAuth`)
+- Use `@vueuse/core` utilities where possible (`useAsyncState`, `useFetch`, `useStorage`, etc.)
+- Return `readonly()` refs for data to prevent external mutation
+
+```ts
+import { ref, readonly } from 'vue'
+import { useAsyncState } from '@vueuse/core'
+
+export function useMyFeature() {
+  const data = ref<MyType[]>([])
+  const { isLoading, error } = useAsyncState(async () => {
+    data.value = await myApi.list()
+  }, undefined)
+  return { data: readonly(data), isLoading, error }
+}
+```
+
+### API Services
+- All API calls go through `src/services/api.ts`
+- Define TypeScript interfaces for all request/response types
+- Group related endpoints into named objects (e.g., `itemsApi`)
+
+### Styling
+- Use Tailwind CSS utility classes
+- Use `cn()` helper from `@/lib/utils` to conditionally merge classes
+- Use shadcn-vue CSS variables (`--background`, `--primary`, etc.) for theming
+- Never write custom CSS unless Tailwind cannot achieve the result
+
+### Adding a New shadcn-vue Component
+```bash
+# Manual approach: create in src/components/ui/<component>/
+# Follow the pattern of existing components (Button, Card)
+```
+
+## Commands
+```bash
+pnpm dev              # Start dev server
+pnpm build            # Type-check + build
+pnpm type-check       # Run vue-tsc --noEmit
+pnpm lint             # ESLint with auto-fix
+pnpm lint:check       # ESLint check only
+pnpm format           # Prettier write
+pnpm format:check     # Prettier check
+```
