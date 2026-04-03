@@ -5,7 +5,6 @@
   import {
     ArrowLeft,
     Plus,
-    Trash2,
     Loader2,
     AlertCircle,
     PackageOpen,
@@ -16,10 +15,14 @@
     PlayCircle,
   } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
-  import AppDatePicker from '@/components/ui/DatePicker/AppDatePicker.vue'
+  import DatePicker from '@/components/ui/date-picker/DatePicker.vue'
+  import { useConfirm } from '@/composables/useConfirm'
+  import { Input } from '@/components/ui/input'
+  import { Label } from '@/components/ui/label'
 
   const route = useRoute()
   const router = useRouter()
+  const { confirm } = useConfirm()
 
   const order = ref<PurchaseOrder | null>(null)
   const isLoading = ref(true)
@@ -166,6 +169,14 @@
 
   async function handleCancel() {
     if (!order.value) return
+    const confirmed = await confirm({
+      title: '取消訂單',
+      message: `確定要取消訂單「${order.value.order_number}」嗎？取消後無法恢復為進行中狀態。`,
+      confirmText: '取消訂單',
+      cancelText: '返回',
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     isCancelling.value = true
     try {
       order.value = await ordersApi.cancel(order.value.id)
@@ -179,6 +190,13 @@
 
   async function handleClose() {
     if (!order.value) return
+    const confirmed = await confirm({
+      title: '結案訂單',
+      message: `確定要將訂單「${order.value.order_number}」結案嗎？結案後將無法再進行操作。`,
+      confirmText: '結案',
+      cancelText: '取消',
+    })
+    if (!confirmed) return
     isClosing.value = true
     try {
       order.value = await ordersApi.close(order.value.id)
@@ -350,58 +368,50 @@
         </div>
 
         <!-- Add item form -->
-        <div v-if="showAddItem && isOpen" class="p-4 border-b border-border bg-muted/10 space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div>
-              <label class="text-xs text-muted-foreground">項次 *</label>
-              <input
+        <div v-if="showAddItem && isOpen" class="p-5 border-b border-border bg-muted/10 space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="space-y-1.5">
+              <Label>項次 <span class="text-destructive">*</span></Label>
+              <Input
                 v-model.number="newItemNumber"
                 type="number"
                 min="1"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
-            <div>
-              <label class="text-xs text-muted-foreground">物料名稱 *</label>
-              <input
+            <div class="space-y-1.5">
+              <Label>物料名稱 <span class="text-destructive">*</span></Label>
+              <Input
                 v-model="newMaterialName"
-                type="text"
                 placeholder="物料名稱"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
-            <div>
-              <label class="text-xs text-muted-foreground">機型</label>
-              <input
+            <div class="space-y-1.5">
+              <Label>機型</Label>
+              <Input
                 v-model="newModelName"
-                type="text"
                 placeholder="例如 A123"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-            <div>
-              <label class="text-xs text-muted-foreground">規格</label>
-              <input
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="space-y-1.5">
+              <Label>規格</Label>
+              <Input
                 v-model="newSpec"
-                type="text"
                 placeholder="選填"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
-            <div>
-              <label class="text-xs text-muted-foreground">數量</label>
-              <input
+            <div class="space-y-1.5">
+              <Label>數量</Label>
+              <Input
                 v-model.number="newQty"
                 type="number"
                 min="1"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
-            <div>
-              <label class="text-xs text-muted-foreground">單價</label>
-              <input
+            <div class="space-y-1.5">
+              <Label>單價</Label>
+              <Input
                 v-model.number="newUnitPrice"
                 type="number"
                 min="0"
@@ -410,7 +420,7 @@
             </div>
             <div>
               <label class="text-xs text-muted-foreground mb-1 block">交期</label>
-              <AppDatePicker v-model="newDeliveryDate" placeholder="選填" />
+              <DatePicker v-model="newDeliveryDate" placeholder="選填" />
             </div>
           </div>
           <div class="flex justify-end">

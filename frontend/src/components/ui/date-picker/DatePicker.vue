@@ -1,28 +1,28 @@
 <script setup lang="ts">
 /**
- * AppDatePicker — supports typing, paste, and calendar popover.
- * Uses @vuepic/vue-datepicker (named export: VueDatePicker).
+ * DatePicker — shadcn-styled date picker wrapper.
+ * Integrates VueDatePicker with app theme colors and keyboard optimization.
  */
-
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import '@vuepic/vue-datepicker/dist/main.css'
 import { computed } from 'vue'
 import { useDark } from '@vueuse/core'
 import { format, parse, isValid } from 'date-fns'
+import { cn } from '@/lib/utils'
 
-const props = withDefaults(
-  defineProps<{
-    modelValue?: string // YYYY-MM-DD
-    placeholder?: string
-    disabled?: boolean
-    id?: string
-  }>(),
-  {
-    modelValue: '',
-    placeholder: 'YYYY-MM-DD',
-    disabled: false,
-  },
-)
+interface Props {
+  modelValue?: string
+  placeholder?: string
+  disabled?: boolean
+  id?: string
+  class?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
+  placeholder: 'yyyy-MM-dd',
+  disabled: false,
+})
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -30,7 +30,6 @@ const emit = defineEmits<{
 
 const isDark = useDark()
 
-// Convert YYYY-MM-DD string → Date object for the picker
 const pickerValue = computed<Date | null>(() => {
   if (!props.modelValue) return null
   const d = parse(props.modelValue, 'yyyy-MM-dd', new Date())
@@ -44,6 +43,15 @@ function onPickerUpdate(val: Date | null) {
   }
   emit('update:modelValue', format(val, 'yyyy-MM-dd'))
 }
+
+function parseFn(dateStr: string): Date {
+  const tryFormats = ['yyyy-MM-dd', 'yyyyMMdd', 'MM/dd/yyyy', 'dd/MM/yyyy', 'yyyy/MM/dd']
+  for (const fmt of tryFormats) {
+    const d = parse(dateStr.trim(), fmt, new Date())
+    if (isValid(d)) return d
+  }
+  return new Date(dateStr)
+}
 </script>
 
 <template>
@@ -55,20 +63,28 @@ function onPickerUpdate(val: Date | null) {
     :enable-time-picker="false"
     format="yyyy-MM-dd"
     text-input
-    :text-input-options="{ format: 'yyyy-MM-dd', enterSubmit: true, tabSubmit: true }"
+    :text-input-options="{
+      format: 'yyyy-MM-dd',
+      enterSubmit: true,
+      tabSubmit: true,
+      openMenu: false,
+    }"
+    :parse-fn="parseFn"
     :placeholder="placeholder"
     :teleport="true"
-    class="app-date-picker"
+    :class="cn('app-date-picker', $props.class)"
     @update:model-value="onPickerUpdate"
   />
 </template>
 
 <style>
-/* Override @vuepic/vue-datepicker styles to match app design */
+/* 
+   We keep the global override class names for the date picker 
+   as it needs to override deep internal styles of the 3rd party component.
+*/
 .app-date-picker {
   width: 100%;
 }
-
 .app-date-picker .dp__input {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
@@ -78,60 +94,29 @@ function onPickerUpdate(val: Date | null) {
   height: 2.5rem;
   padding: 0 2.5rem 0 0.75rem;
   font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-
 .app-date-picker .dp__input:focus {
   outline: none;
   border-color: hsl(var(--ring));
   box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
 }
-
-.app-date-picker .dp__input_icon {
-  color: hsl(var(--muted-foreground));
-}
-
-.app-date-picker .dp__button,
-.app-date-picker .dp__action_button {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border-radius: var(--radius);
-}
-
-.app-date-picker .dp__calendar_header_item,
-.app-date-picker .dp__cell_inner {
-  border-radius: var(--radius-sm);
-}
-
-.app-date-picker .dp__active_date {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-}
-
-.app-date-picker .dp__today {
-  border-color: hsl(var(--primary));
-}
-
 .app-date-picker .dp__menu {
   background-color: hsl(var(--popover));
   border-color: hsl(var(--border));
   border-radius: var(--radius-lg);
   color: hsl(var(--popover-foreground));
-  box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 40px -5px rgba(0, 0, 0, 0.2);
   z-index: 9999;
 }
-
-.app-date-picker .dp__arrow_top,
-.app-date-picker .dp__arrow_bottom {
-  background-color: hsl(var(--popover));
-  border-color: hsl(var(--border));
-}
-
-.app-date-picker .dp__calendar_header_item {
-  color: hsl(var(--muted-foreground));
-  font-size: 0.75rem;
-}
-
-.app-date-picker .dp__cell_inner:hover:not(.dp__active_date):not(.dp__today) {
+.app-date-picker .dp__cell_inner:hover:not(.dp__active_date) {
   background-color: hsl(var(--accent));
+}
+.app-date-picker .dp__active_date {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.app-date-picker .dp__today {
+  border-color: hsl(var(--primary));
 }
 </style>

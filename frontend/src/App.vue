@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import AppLayout from '@/components/layout/AppLayout.vue'
+  import AlertDialog from '@/components/ui/alert-dialog/AlertDialog.vue'
   import { Toaster } from 'vue-sonner'
   import { useDark } from '@vueuse/core'
   import { computed, watch } from 'vue'
@@ -15,15 +16,25 @@
 </script>
 
 <template>
+  <!--
+    Toast: bottom-right, expand=false gives the 3D stacked card effect.
+    The stacking/depth is sonner's default behavior when multiple toasts
+    are queued and expand is off.
+  -->
   <Toaster
-    position="top-right"
+    position="bottom-right"
     rich-colors
     close-button
     :theme="toastTheme"
-    expand
+    :expand="false"
     :duration="4000"
-    :toastOptions="{ style: { zIndex: 99999 } }"
+    :visible-toasts="3"
+    :offset="16"
   />
+
+  <!-- Global confirmation modal — driven by the useConfirm() singleton -->
+  <AlertDialog />
+
   <AppLayout>
     <RouterView />
   </AppLayout>

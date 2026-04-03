@@ -13,11 +13,14 @@
     Eye,
   } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
-  import AppDatePicker from '@/components/ui/DatePicker/AppDatePicker.vue'
+  import DatePicker from '@/components/ui/date-picker/DatePicker.vue'
+  import { Input } from '@/components/ui/input'
+  import { useConfirm } from '@/composables/useConfirm'
 
   const router = useRouter()
   const { plans, isLoading, error, createPlan, deletePlan, submitPlan, refresh } =
     useProcurementPlans()
+  const { confirm } = useConfirm()
 
   const newName = ref('')
   const newDate = ref('')
@@ -46,6 +49,14 @@
   }
 
   async function handleDelete(id: string, name: string) {
+    const confirmed = await confirm({
+      title: '刪除採購計畫',
+      message: `確定要刪除「${name}」嗎？此操作無法復原。`,
+      confirmText: '刪除',
+      cancelText: '取消',
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     deletingId.value = id
     try {
       await deletePlan(id)
@@ -58,6 +69,13 @@
   }
 
   async function handleSubmit(id: string, name: string) {
+    const confirmed = await confirm({
+      title: '送審採購計畫',
+      message: `確定要將「${name}」送審嗎？送審後將無法再編輯內容。`,
+      confirmText: '送審',
+      cancelText: '取消',
+    })
+    if (!confirmed) return
     submittingId.value = id
     try {
       await submitPlan(id)
@@ -132,16 +150,15 @@
       <div class="px-5 py-3 border-b border-border bg-muted/30">
         <h2 class="text-sm font-medium text-foreground">新增採購計畫</h2>
       </div>
-      <div class="p-4 flex flex-col sm:flex-row gap-2">
-        <input
+      <div class="p-4 flex flex-col sm:flex-row gap-3">
+        <Input
           v-model="newName"
-          type="text"
           placeholder="計畫名稱 *"
-          class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
+          class="flex-1"
           @keydown.enter="handleCreate"
         />
         <div class="w-48 shrink-0">
-          <AppDatePicker v-model="newDate" placeholder="預計採購日" />
+          <DatePicker v-model="newDate" placeholder="選擇交貨日期" />
         </div>
         <button
           :disabled="!newName.trim() || !newDate || isCreating"

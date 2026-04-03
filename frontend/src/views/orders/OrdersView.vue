@@ -13,10 +13,14 @@
     Ban,
   } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
-  import AppDatePicker from '@/components/ui/DatePicker/AppDatePicker.vue'
+  import DatePicker from '@/components/ui/date-picker/DatePicker.vue'
+  import { useConfirm } from '@/composables/useConfirm'
+  import { Input } from '@/components/ui/input'
+  import { Label } from '@/components/ui/label'
 
   const router = useRouter()
   const { orders, isLoading, error, createOrder, deleteOrder, cancelOrder, refresh } = useOrders()
+  const { confirm } = useConfirm()
 
   // Create form
   const showCreateForm = ref(false)
@@ -69,6 +73,14 @@
   }
 
   async function handleDelete(id: string, name: string) {
+    const confirmed = await confirm({
+      title: '確認刪除訂單',
+      message: `確定要刪除訂單「${name}」嗎？此操作無法復原。`,
+      confirmText: '刪除',
+      cancelText: '取消',
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     deletingId.value = id
     try {
       await deleteOrder(id)
@@ -81,6 +93,14 @@
   }
 
   async function handleCancel(id: string, name: string) {
+    const confirmed = await confirm({
+      title: '確認取消訂單',
+      message: `確定要取消訂單「${name}」嗎？取消後無法恢復為進行中狀態。`,
+      confirmText: '取消訂單',
+      cancelText: '返回',
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     cancellingId.value = id
     try {
       await cancelOrder(id)
@@ -160,53 +180,45 @@
       <div class="px-5 py-3 border-b border-border bg-muted/30">
         <h2 class="text-sm font-medium text-foreground">新增採購訂單</h2>
       </div>
-      <div class="p-4 space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-muted-foreground">訂單編號 *</label>
-            <input
+      <div class="p-4 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <Label>訂單編號 <span class="text-destructive">*</span></Label>
+            <Input
               v-model="newOrderNumber"
-              type="text"
               placeholder="例如 PO-2026-0001"
-              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
-          <div>
-            <label class="text-xs text-muted-foreground">供應商名稱 *</label>
-            <input
+          <div class="space-y-1.5">
+            <Label>供應商名稱 <span class="text-destructive">*</span></Label>
+            <Input
               v-model="newSupplierName"
-              type="text"
               placeholder="供應商名稱"
-              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="text-xs text-muted-foreground">供應商代碼</label>
-            <input
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="space-y-1.5">
+            <Label>供應商代碼</Label>
+            <Input
               v-model="newSupplierCode"
-              type="text"
               placeholder="選填"
-              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
-          <div>
-            <label class="text-xs text-muted-foreground mb-1 block">訂單日期 *</label>
-            <AppDatePicker v-model="newOrderDate" placeholder="訂單日期" />
+          <div class="space-y-1.5">
+            <Label>訂單日期 <span class="text-destructive">*</span></Label>
+            <DatePicker v-model="newOrderDate" placeholder="訂單日期" />
           </div>
-          <div>
-            <label class="text-xs text-muted-foreground mb-1 block">預期交貨日 *</label>
-            <AppDatePicker v-model="newExpectedDate" placeholder="預期交貨日" />
+          <div class="space-y-1.5">
+            <Label>預期交貨日 <span class="text-destructive">*</span></Label>
+            <DatePicker v-model="newExpectedDate" placeholder="預期交貨日" />
           </div>
         </div>
-        <div>
-          <label class="text-xs text-muted-foreground">備註</label>
-          <input
+        <div class="space-y-1.5">
+          <Label>備註</Label>
+          <Input
             v-model="newNotes"
-            type="text"
             placeholder="選填"
-            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
         <div class="flex justify-end gap-2">

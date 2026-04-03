@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { ref } from 'vue'
   import {
-    Menu,
     Sun,
     Moon,
     Home,
@@ -17,10 +16,8 @@
   import { useTheme } from '@/composables/useTheme'
   import NotificationPanel from '@/components/layout/NotificationPanel.vue'
   import CommandPalette from '@/components/layout/CommandPalette.vue'
-
-  defineEmits<{
-    toggleSidebar: []
-  }>()
+  import Tooltip from '@/components/ui/tooltip/Tooltip.vue'
+  import { SidebarTrigger } from '@/components/ui/sidebar'
 
   const isDark = useDark()
   const toggleDark = useToggle(isDark)
@@ -35,40 +32,27 @@
     themePopoverOpen.value = false
   })
 
-  // Command palette ref
-  const cmdPaletteRef = ref<{ open: () => void } | null>(null)
+  // Command palette — directly call .open() via ref (defineExpose in CommandPalette)
+  const cmdPaletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
 
   function openCommandPalette() {
-    ;(cmdPaletteRef.value as unknown as { open?: () => void })?.open?.()
+    cmdPaletteRef.value?.open()
   }
 </script>
 
 <template>
-  <!-- Command Palette (always mounted, triggered via keyboard or ref) -->
-  <CommandPalette ref="cmdPaletteRef">
-    <template #default="{ open }">
-      <!-- we expose via ref instead; this slot is unused but satisfies the type -->
-      <span class="hidden" @click="open" />
-    </template>
-  </CommandPalette>
+  <!-- Command Palette — always mounted; Ctrl+K also works globally -->
+  <CommandPalette ref="cmdPaletteRef" />
 
   <div class="shrink-0">
-    <header class="flex items-center h-14 px-4 gap-3 border-b border-border bg-card shadow-sm">
-      <!-- Mobile sidebar toggle -->
-      <button
-        class="md:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        aria-label="Toggle sidebar"
-        @click="$emit('toggleSidebar')"
-      >
-        <Menu :size="20" />
-      </button>
+    <header class="flex items-center h-14 px-4 gap-3 border-b border-border bg-card shadow-sm z-20 relative">
+      <SidebarTrigger class="-ml-2" />
 
       <!-- Breadcrumbs -->
       <nav
         class="flex items-center gap-1 text-sm flex-1 min-w-0 overflow-hidden"
         aria-label="Breadcrumb"
       >
-        <!-- Home icon always visible -->
         <RouterLink
           to="/"
           class="flex items-center text-muted-foreground hover:text-foreground transition-colors shrink-0"
@@ -93,53 +77,61 @@
       <!-- Right side actions -->
       <div class="flex items-center gap-1 shrink-0">
         <!-- Search / Command palette trigger (md+) -->
-        <button
-          class="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm"
-          aria-label="Open search"
-          @click="openCommandPalette"
-        >
-          <Search :size="16" />
-          <span class="hidden lg:inline text-xs">Search</span>
-          <kbd
-            class="hidden lg:inline-flex items-center text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border/60 font-mono text-muted-foreground"
+        <Tooltip content="搜尋 (Ctrl+K)" side="bottom">
+          <button
+            class="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm"
+            aria-label="Open search"
+            @click="openCommandPalette"
           >
-            ⌘K
-          </kbd>
-        </button>
+            <Search :size="16" />
+            <span class="hidden lg:inline text-xs">Search</span>
+            <kbd
+              class="hidden lg:inline-flex items-center text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border/60 font-mono text-muted-foreground"
+            >
+              ⌘K
+            </kbd>
+          </button>
+        </Tooltip>
 
         <!-- Search icon (mobile) -->
-        <button
-          class="md:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          aria-label="Open search"
-          @click="openCommandPalette"
-        >
-          <Search :size="18" />
-        </button>
+        <Tooltip content="搜尋" side="bottom">
+          <button
+            class="md:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            aria-label="Open search"
+            @click="openCommandPalette"
+          >
+            <Search :size="18" />
+          </button>
+        </Tooltip>
 
         <!-- Notifications -->
         <NotificationPanel />
 
         <!-- Layout width toggle -->
-        <button
-          class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          :aria-label="isNarrow ? 'Switch to wide layout' : 'Switch to narrow layout'"
-          :title="isNarrow ? '切換寬版' : '切換窄版'"
-          @click="toggleWidth"
-        >
-          <AlignCenter v-if="isNarrow" :size="18" />
-          <AlignJustify v-else :size="18" />
-        </button>
+        <Tooltip :content="isNarrow ? '切換寬版（延伸全寬）' : '切換窄版（靠中對齊）'" side="bottom">
+          <button
+            class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            :aria-label="isNarrow ? 'Switch to wide layout' : 'Switch to narrow layout'"
+            @click="toggleWidth"
+          >
+            <!-- Narrow mode active: show AlignJustify to switch to wide -->
+            <AlignJustify v-if="isNarrow" :size="18" />
+            <!-- Wide mode active: show AlignCenter to switch to narrow -->
+            <AlignCenter v-else :size="18" />
+          </button>
+        </Tooltip>
 
         <!-- Theme color picker -->
         <div class="relative" ref="themePopoverRef">
-          <button
-            class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-            aria-label="Choose theme color"
-            title="切換主題顏色"
-            @click="themePopoverOpen = !themePopoverOpen"
-          >
-            <Palette :size="18" />
-          </button>
+          <Tooltip content="主題顏色" side="bottom">
+            <button
+              class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Choose theme color"
+              @click="themePopoverOpen = !themePopoverOpen"
+            >
+              <Palette :size="18" />
+            </button>
+          </Tooltip>
 
           <!-- Color palette popover -->
           <Transition name="popover">
@@ -201,30 +193,34 @@
           </Transition>
         </div>
 
-        <!-- (Standalone dark toggle kept for quick access) -->
-        <button
-          class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          @click="toggleDark()"
-        >
-          <Sun v-if="isDark" :size="18" />
-          <Moon v-else :size="18" />
-        </button>
+        <!-- Dark/light quick toggle -->
+        <Tooltip :content="isDark ? '切換亮色模式' : '切換深色模式'" side="bottom">
+          <button
+            class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            @click="toggleDark()"
+          >
+            <Sun v-if="isDark" :size="18" />
+            <Moon v-else :size="18" />
+          </button>
+        </Tooltip>
 
         <!-- Divider -->
         <div class="w-px h-5 bg-border mx-1"></div>
 
         <!-- User avatar -->
-        <button
-          class="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity"
-          aria-label="User profile"
-        >
-          <div
-            class="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
+        <Tooltip content="使用者設定" side="bottom">
+          <button
+            class="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity"
+            aria-label="User profile"
           >
-            JD
-          </div>
-        </button>
+            <div
+              class="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
+            >
+              JD
+            </div>
+          </button>
+        </Tooltip>
       </div>
     </header>
   </div>

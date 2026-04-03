@@ -14,6 +14,7 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@vee-validate/zod": "^4.15.1",
     "@vuepic/vue-datepicker": "^12.1.0",
     "@vueuse/core": "^14.2.1",
     "axios": "^1.13.6",
@@ -23,10 +24,13 @@
     "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
     "radix-vue": "^1.9.17",
+    "reka-ui": "^2.9.3",
     "tailwind-merge": "^3.5.0",
+    "vee-validate": "^4.15.1",
     "vue": "^3.5.30",
     "vue-router": "^5.0.4",
-    "vue-sonner": "^2.0.9"
+    "vue-sonner": "^2.0.9",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -46,5 +50,6 @@
     "vite": "^8.0.1",
     "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^3.2.5"
-  }
+  },
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
 }
