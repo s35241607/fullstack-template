@@ -21,7 +21,8 @@
     SidebarMenuItem,
     SidebarMenuButton,
     SidebarFooter,
-    SidebarHeader
+    SidebarHeader,
+    SidebarRail,
   } from '@/components/ui/sidebar'
   import { useRoute } from 'vue-router'
 
@@ -48,17 +49,21 @@
 
 <template>
   <Sidebar collapsible="icon">
-    <!-- Header -->
+    <!-- Header: uses official SidebarMenuButton size="lg" pattern -->
     <SidebarHeader>
-      <div class="flex items-center gap-2 px-2 py-2">
-        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-bold shadow-sm">
-          M
-        </div>
-        <div class="flex flex-col group-data-[collapsible=icon]:hidden">
-          <span class="font-semibold text-foreground whitespace-nowrap text-sm tracking-tight">MyApp</span>
-          <p class="text-[10px] text-muted-foreground whitespace-nowrap leading-tight">Enterprise Platform</p>
-        </div>
-      </div>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" tooltip="MyApp">
+            <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-bold shadow-sm">
+              M
+            </div>
+            <div class="grid flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-semibold">MyApp</span>
+              <span class="truncate text-xs">Enterprise Platform</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </SidebarHeader>
 
     <SidebarContent>
@@ -68,7 +73,7 @@
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in mainNavItems" :key="item.path">
-              <SidebarMenuButton as-child :is-active="route.path === item.path">
+              <SidebarMenuButton as-child :is-active="route.path === item.path" :tooltip="item.name">
                 <RouterLink :to="item.path" :title="item.name">
                   <component :is="item.icon" />
                   <span>{{ item.name }}</span>
@@ -85,7 +90,7 @@
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in bpmnNavItems" :key="item.path">
-              <SidebarMenuButton as-child :is-active="route.path === item.path">
+              <SidebarMenuButton as-child :is-active="route.path === item.path" :tooltip="item.name">
                 <RouterLink :to="item.path" :title="item.name">
                   <component :is="item.icon" />
                   <span>{{ item.name }}</span>
@@ -102,7 +107,7 @@
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in procurementNavItems" :key="item.path">
-              <SidebarMenuButton as-child :is-active="route.path === item.path">
+              <SidebarMenuButton as-child :is-active="route.path === item.path" :tooltip="item.name">
                 <RouterLink :to="item.path" :title="item.name">
                   <component :is="item.icon" />
                   <span>{{ item.name }}</span>
@@ -119,7 +124,7 @@
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in orderNavItems" :key="item.path">
-              <SidebarMenuButton as-child :is-active="route.path === item.path">
+              <SidebarMenuButton as-child :is-active="route.path === item.path" :tooltip="item.name">
                 <RouterLink :to="item.path" :title="item.name">
                   <component :is="item.icon" />
                   <span>{{ item.name }}</span>
@@ -136,7 +141,7 @@
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton as-child :is-active="route.path === '/about'">
+              <SidebarMenuButton as-child :is-active="route.path === '/about'" tooltip="About">
                 <RouterLink to="/about" title="About">
                   <Info />
                   <span>About</span>
@@ -148,16 +153,24 @@
       </SidebarGroup>
     </SidebarContent>
 
+    <!-- Footer: uses official SidebarMenuButton pattern -->
     <SidebarFooter>
-      <div class="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-accent transition-colors overflow-hidden group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-        <div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-semibold shrink-0">
-          JD
-        </div>
-        <div class="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-          <p class="text-xs font-medium text-foreground whitespace-nowrap">John Doe</p>
-          <p class="text-[10px] text-muted-foreground whitespace-nowrap">john@example.com</p>
-        </div>
-      </div>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size="lg" tooltip="John Doe">
+            <div class="flex aspect-square size-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-xs font-semibold">
+              JD
+            </div>
+            <div class="grid flex-1 text-left text-sm leading-tight">
+              <span class="truncate font-semibold text-xs">John Doe</span>
+              <span class="truncate text-[10px] text-muted-foreground">john@example.com</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
     </SidebarFooter>
+
+    <!-- Rail: allows hover-to-expand when collapsed -->
+    <SidebarRail />
   </Sidebar>
 </template>

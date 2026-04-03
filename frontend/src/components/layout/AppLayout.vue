@@ -20,10 +20,10 @@ const { isNarrow } = useTheme()
 
     <AppSidebar />
 
-    <SidebarInset class="flex flex-col flex-1 min-w-0 overflow-hidden bg-background">
+    <SidebarInset>
       <AppHeader />
 
-      <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
         <!--
           Narrow mode: constrain content to max-w-4xl centered.
           Wide mode: override any max-w-* in child view components so
@@ -32,7 +32,7 @@ const { isNarrow } = useTheme()
         <div :class="isNarrow ? 'max-w-4xl mx-auto' : 'layout-wide'">
           <slot />
         </div>
-      </main>
+      </div>
     </SidebarInset>
   </SidebarProvider>
 </template>
