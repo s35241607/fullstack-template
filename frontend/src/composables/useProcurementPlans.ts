@@ -28,11 +28,30 @@ export function useProcurementPlans() {
     plans.value = plans.value.filter((p) => p.id !== id)
   }
 
-  async function submitPlan(id: string) {
-    const updated = await procurementApi.submitPlan(id)
+  function updateLocal(id: string, updated: ProcurementPlan) {
     const idx = plans.value.findIndex((p) => p.id === id)
     if (idx !== -1) plans.value[idx] = updated
     return updated
+  }
+
+  async function submitPlan(id: string) {
+    return updateLocal(id, await procurementApi.submitPlan(id))
+  }
+
+  async function sendToEeReview(id: string) {
+    return updateLocal(id, await procurementApi.sendToEeReview(id))
+  }
+
+  async function markQuoted(id: string) {
+    return updateLocal(id, await procurementApi.markQuoted(id))
+  }
+
+  async function approvePlan(id: string) {
+    return updateLocal(id, await procurementApi.approvePlan(id))
+  }
+
+  async function submitToBudget(id: string) {
+    return updateLocal(id, await procurementApi.submitToBudget(id))
   }
 
   return {
@@ -43,5 +62,9 @@ export function useProcurementPlans() {
     createPlan,
     deletePlan,
     submitPlan,
+    sendToEeReview,
+    markQuoted,
+    approvePlan,
+    submitToBudget,
   }
 }

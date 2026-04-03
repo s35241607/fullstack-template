@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.procurement.entities.plan_item import PlanItem
 from app.domain.procurement.entities.procurement_plan import ProcurementPlan
 from app.domain.procurement.repositories.procurement_plan_repository import ProcurementPlanRepository
-from app.domain.procurement.value_objects.plan_status import PlanStatus
+from app.domain.procurement.value_objects.plan_status import PlanItemStatus, PlanStatus
 from app.infrastructure.database.models.procurement_plan_model import PlanItemModel, ProcurementPlanModel
 
 
@@ -32,7 +32,6 @@ class SqlAlchemyProcurementPlanRepository(ProcurementPlanRepository):
             existing.status = entity.status.value
 
             # Sync items: remove deleted, update existing, add new
-            existing_item_ids = {item.id for item in existing.items}
             entity_item_ids = {item.id for item in entity.items}
 
             # Delete removed items
@@ -49,6 +48,13 @@ class SqlAlchemyProcurementPlanRepository(ProcurementPlanRepository):
                     item_model.quantity = item.quantity
                     item_model.estimated_unit_price = item.estimated_unit_price
                     item_model.note = item.note
+                    item_model.item_status = item.item_status.value
+                    item_model.spec_file_url = item.spec_file_url
+                    item_model.spec_uploaded_by = item.spec_uploaded_by
+                    item_model.spec_uploaded_at = item.spec_uploaded_at
+                    item_model.supplier_name = item.supplier_name
+                    item_model.quoted_unit_price = item.quoted_unit_price
+                    item_model.quoted_at = item.quoted_at
                 else:
                     existing.items.append(self._to_item_model(item, entity.id))
         else:
@@ -79,6 +85,13 @@ class SqlAlchemyProcurementPlanRepository(ProcurementPlanRepository):
         item.quantity = model.quantity
         item.estimated_unit_price = model.estimated_unit_price
         item.note = model.note
+        item.item_status = PlanItemStatus(model.item_status)
+        item.spec_file_url = model.spec_file_url
+        item.spec_uploaded_by = model.spec_uploaded_by
+        item.spec_uploaded_at = model.spec_uploaded_at
+        item.supplier_name = model.supplier_name
+        item.quoted_unit_price = model.quoted_unit_price
+        item.quoted_at = model.quoted_at
         return item
 
     @staticmethod
@@ -101,4 +114,11 @@ class SqlAlchemyProcurementPlanRepository(ProcurementPlanRepository):
             quantity=item.quantity,
             estimated_unit_price=item.estimated_unit_price,
             note=item.note,
+            item_status=item.item_status.value,
+            spec_file_url=item.spec_file_url,
+            spec_uploaded_by=item.spec_uploaded_by,
+            spec_uploaded_at=item.spec_uploaded_at,
+            supplier_name=item.supplier_name,
+            quoted_unit_price=item.quoted_unit_price,
+            quoted_at=item.quoted_at,
         )

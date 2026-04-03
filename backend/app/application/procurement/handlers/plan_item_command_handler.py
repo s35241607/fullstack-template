@@ -34,6 +34,22 @@ class RemoveItemCommand:
     item_id: UUID
 
 
+@dataclass
+class UploadSpecCommand:
+    plan_id: UUID
+    item_id: UUID
+    file_url: str
+    uploaded_by: str
+
+
+@dataclass
+class SetQuoteCommand:
+    plan_id: UUID
+    item_id: UUID
+    quoted_unit_price: float
+    supplier_name: str
+
+
 class PlanItemCommandHandler:
     """Handles write operations for PlanItem within a ProcurementPlan."""
 
@@ -76,3 +92,24 @@ class PlanItemCommandHandler:
         plan = await self._get_plan(command.plan_id)
         plan.remove_item(command.item_id)
         await self._repository.save(plan)
+
+    async def handle_upload_spec(self, command: UploadSpecCommand) -> PlanItem:
+        plan = await self._get_plan(command.plan_id)
+        item = self._find_item(plan, command.item_id)
+        item.upload_spec(command.file_url, command.uploaded_by)
+        await self._repository.save(plan)
+        return item
+
+    async def handle_set_quote(self, command: SetQuoteCommand) -> PlanItem:
+        plan = await self._get_plan(command.plan_id)
+        item = self._find_item(plan, command.item_id)
+        item.set_quote(command.quoted_unit_price, command.supplier_name)
+        await self._repository.save(plan)
+        return item
+
+    @staticmethod
+    def _find_item(plan: ProcurementPlan, item_id: UUID) -> PlanItem:
+        for item in plan.items:
+            if item.id == item_id:
+                return item
+        raise EntityNotFoundError("PlanItem", item_id)

@@ -30,6 +30,26 @@ class SubmitPlanCommand:
     plan_id: UUID
 
 
+@dataclass
+class SendToEeReviewCommand:
+    plan_id: UUID
+
+
+@dataclass
+class MarkQuotedCommand:
+    plan_id: UUID
+
+
+@dataclass
+class ApprovePlanCommand:
+    plan_id: UUID
+
+
+@dataclass
+class SubmitToBudgetCommand:
+    plan_id: UUID
+
+
 class ProcurementPlanCommandHandler:
     """Handles write operations for ProcurementPlan aggregate."""
 
@@ -60,5 +80,37 @@ class ProcurementPlanCommandHandler:
         if plan is None:
             raise EntityNotFoundError("ProcurementPlan", command.plan_id)
         plan.submit()
+        await self._repository.save(plan)
+        return plan
+
+    async def handle_send_to_ee_review(self, command: SendToEeReviewCommand) -> ProcurementPlan:
+        plan = await self._repository.get_by_id(command.plan_id)
+        if plan is None:
+            raise EntityNotFoundError("ProcurementPlan", command.plan_id)
+        plan.send_to_ee_review()
+        await self._repository.save(plan)
+        return plan
+
+    async def handle_mark_quoted(self, command: MarkQuotedCommand) -> ProcurementPlan:
+        plan = await self._repository.get_by_id(command.plan_id)
+        if plan is None:
+            raise EntityNotFoundError("ProcurementPlan", command.plan_id)
+        plan.mark_quoted()
+        await self._repository.save(plan)
+        return plan
+
+    async def handle_approve(self, command: ApprovePlanCommand) -> ProcurementPlan:
+        plan = await self._repository.get_by_id(command.plan_id)
+        if plan is None:
+            raise EntityNotFoundError("ProcurementPlan", command.plan_id)
+        plan.approve()
+        await self._repository.save(plan)
+        return plan
+
+    async def handle_submit_to_budget(self, command: SubmitToBudgetCommand) -> ProcurementPlan:
+        plan = await self._repository.get_by_id(command.plan_id)
+        if plan is None:
+            raise EntityNotFoundError("ProcurementPlan", command.plan_id)
+        plan.submit_to_budget()
         await self._repository.save(plan)
         return plan

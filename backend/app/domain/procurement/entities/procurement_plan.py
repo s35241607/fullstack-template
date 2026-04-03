@@ -68,6 +68,26 @@ class ProcurementPlan(Entity):
             raise BusinessRuleViolationError("Cannot submit a plan without items")
         self.status = PlanStatus.SUBMITTED
 
+    def send_to_ee_review(self) -> None:
+        if self.status != PlanStatus.SUBMITTED:
+            raise BusinessRuleViolationError("Plan must be submitted before EE review")
+        self.status = PlanStatus.EE_REVIEW
+
+    def mark_quoted(self) -> None:
+        if self.status != PlanStatus.EE_REVIEW:
+            raise BusinessRuleViolationError("Plan must be in EE review to mark as quoted")
+        self.status = PlanStatus.QUOTED
+
+    def approve(self) -> None:
+        if self.status != PlanStatus.QUOTED:
+            raise BusinessRuleViolationError("Plan must be quoted before approval")
+        self.status = PlanStatus.APPROVED
+
+    def submit_to_budget(self) -> None:
+        if self.status != PlanStatus.APPROVED:
+            raise BusinessRuleViolationError("Plan must be approved before budget submission")
+        self.status = PlanStatus.BUDGET_SUBMITTED
+
     @property
     def total_amount(self) -> float:
         return sum(item.subtotal for item in self.items)

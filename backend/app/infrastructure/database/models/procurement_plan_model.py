@@ -1,7 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import Date, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database.session import Base
@@ -15,7 +15,7 @@ class ProcurementPlanModel(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
     planned_date: Mapped[date] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="DRAFT")
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="DRAFT")
 
     items: Mapped[list["PlanItemModel"]] = relationship(
         "PlanItemModel",
@@ -40,6 +40,13 @@ class PlanItemModel(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     estimated_unit_price: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    item_status: Mapped[str] = mapped_column(String(30), nullable=False, default="PENDING")
+    spec_file_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    spec_uploaded_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    spec_uploaded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    supplier_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    quoted_unit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    quoted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     plan: Mapped["ProcurementPlanModel"] = relationship("ProcurementPlanModel", back_populates="items")
 

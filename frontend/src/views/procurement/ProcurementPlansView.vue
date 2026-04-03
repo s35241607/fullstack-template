@@ -75,6 +75,37 @@
       maximumFractionDigits: 0,
     }).format(n)
   }
+
+  const statusMap: Record<string, { label: string; class: string }> = {
+    DRAFT: {
+      label: '草稿',
+      class: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    },
+    SUBMITTED: {
+      label: '已送審',
+      class: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+    },
+    EE_REVIEW: {
+      label: 'EE 審查中',
+      class: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    },
+    QUOTED: {
+      label: '已報價',
+      class: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+    },
+    APPROVED: {
+      label: '已核准',
+      class: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    },
+    BUDGET_SUBMITTED: {
+      label: '已送預算',
+      class: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
+    },
+  }
+
+  function getStatus(s: string) {
+    return statusMap[s] ?? { label: s, class: 'bg-gray-100 text-gray-800' }
+  }
 </script>
 
 <template>
@@ -161,13 +192,19 @@
       <!-- List -->
       <table v-else class="w-full text-sm">
         <thead>
-          <tr class="border-b border-border text-left text-muted-foreground">
-            <th class="px-5 py-2 font-medium">名稱</th>
-            <th class="px-5 py-2 font-medium">預計採購日</th>
-            <th class="px-5 py-2 font-medium">狀態</th>
-            <th class="px-5 py-2 font-medium text-right">總金額</th>
-            <th class="px-5 py-2 font-medium text-right">項目數</th>
-            <th class="px-5 py-2 font-medium text-right">操作</th>
+          <tr class="border-b border-border text-left text-muted-foreground bg-muted/40">
+            <th class="px-5 py-2.5 font-medium text-xs uppercase tracking-wider">名稱</th>
+            <th class="px-5 py-2.5 font-medium text-xs uppercase tracking-wider">預計採購日</th>
+            <th class="px-5 py-2.5 font-medium text-xs uppercase tracking-wider">狀態</th>
+            <th class="px-5 py-2.5 font-medium text-xs uppercase tracking-wider text-right">
+              總金額
+            </th>
+            <th class="px-5 py-2.5 font-medium text-xs uppercase tracking-wider text-right">
+              項目數
+            </th>
+            <th class="px-5 py-2.5 font-medium text-xs uppercase tracking-wider text-right">
+              操作
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -181,13 +218,9 @@
             <td class="px-5 py-3">
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                :class="
-                  plan.status === 'DRAFT'
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                "
+                :class="getStatus(plan.status).class"
               >
-                {{ plan.status === 'DRAFT' ? '草稿' : '已送審' }}
+                {{ getStatus(plan.status).label }}
               </span>
             </td>
             <td class="px-5 py-3 text-right text-muted-foreground">

@@ -183,6 +183,168 @@ export const bpmnApi = {
     apiClient.get<ActiveTask[]>('/bpmn/tasks/active', { params: { assignee } }).then((r) => r.data),
 }
 
+// ── Order Types ─────────────────────────────────────────────────────────────────
+
+export interface ReceivingRecord {
+  id: string
+  received_quantity: number
+  received_date: string
+  inspector: string
+  note: string
+}
+
+export interface OrderHold {
+  id: string
+  hold_quantity: number
+  reason: string
+  held_by: string
+  status: string
+  created_at: string
+  released_at: string | null
+  released_by: string | null
+}
+
+export interface OrderItem {
+  id: string
+  item_number: number
+  material_name: string
+  model_name: string
+  specification: string
+  quantity: number
+  unit_price: number
+  delivery_date: string | null
+  status: string
+  received_quantity: number
+  active_hold_quantity: number
+  subtotal: number
+  receiving_records: ReceivingRecord[]
+  holds: OrderHold[]
+}
+
+export interface PurchaseOrder {
+  id: string
+  order_number: string
+  supplier_name: string
+  supplier_code: string
+  order_date: string
+  expected_delivery_date: string
+  notes: string
+  status: string
+  total_amount: number
+  total_ordered: number
+  total_received: number
+  created_at: string
+  updated_at: string
+  items: OrderItem[]
+}
+
+export interface ModelHoldSummary {
+  model_name: string
+  total_hold_quantity: number
+  hold_count: number
+}
+
+export interface ModelHoldDetail {
+  hold_id: string
+  hold_quantity: number
+  reason: string
+  held_by: string
+  created_at: string
+  material_name: string
+  model_name: string
+  ordered_quantity: number
+  order_number: string
+  supplier_name: string
+}
+
+// ── Order API ──────────────────────────────────────────────────────────────────
+
+export const ordersApi = {
+  list: (status?: string) =>
+    apiClient
+      .get<PurchaseOrder[]>('/orders/', { params: status ? { status } : undefined })
+      .then((r) => r.data),
+
+  get: (id: string) => apiClient.get<PurchaseOrder>(`/orders/${id}`).then((r) => r.data),
+
+  create: (data: {
+    order_number: string
+    supplier_name: string
+    supplier_code?: string
+    order_date: string
+    expected_delivery_date: string
+    notes?: string
+  }) => apiClient.post<PurchaseOrder>('/orders/', data).then((r) => r.data),
+
+  update: (
+    id: string,
+    data: { supplier_name?: string; expected_delivery_date?: string; notes?: string },
+  ) => apiClient.patch<PurchaseOrder>(`/orders/${id}`, data).then((r) => r.data),
+
+  delete: (id: string) => apiClient.delete(`/orders/${id}`),
+
+  cancel: (id: string) => apiClient.post<PurchaseOrder>(`/orders/${id}/cancel`).then((r) => r.data),
+
+  close: (id: string) => apiClient.post<PurchaseOrder>(`/orders/${id}/close`).then((r) => r.data),
+
+  addItem: (
+    orderId: string,
+    data: {
+      item_number: number
+      material_name: string
+      model_name?: string
+      specification?: string
+      quantity?: number
+      unit_price?: number
+      delivery_date?: string
+    },
+  ) => apiClient.post<OrderItem>(`/orders/${orderId}/items`, data).then((r) => r.data),
+
+  updateItem: (
+    orderId: string,
+    itemId: string,
+    data: {
+      material_name?: string
+      model_name?: string
+      specification?: string
+      quantity?: number
+      unit_price?: number
+      delivery_date?: string
+    },
+  ) => apiClient.patch<OrderItem>(`/orders/${orderId}/items/${itemId}`, data).then((r) => r.data),
+
+  addReceiving: (
+    orderId: string,
+    itemId: string,
+    data: {
+      received_quantity: number
+      received_date: string
+      inspector?: string
+      note?: string
+    },
+  ) =>
+    apiClient
+      .post<ReceivingRecord>(`/orders/${orderId}/items/${itemId}/receiving`, data)
+      .then((r) => r.data),
+
+  addHold: (
+    orderId: string,
+    itemId: string,
+    data: { hold_quantity: number; reason: string; held_by: string },
+  ) =>
+    apiClient.post<OrderHold>(`/orders/${orderId}/items/${itemId}/holds`, data).then((r) => r.data),
+
+  releaseHold: (orderId: string, itemId: string, holdId: string, released_by: string) =>
+    apiClient.post(`/orders/${orderId}/items/${itemId}/holds/${holdId}/release`, { released_by }),
+
+  holdSummary: () => apiClient.get<ModelHoldSummary[]>('/orders/hold-summary').then((r) => r.data),
+
+  holdsByModel: (modelName: string) =>
+    apiClient
+      .get<ModelHoldDetail[]>(`/orders/holds-by-model/${encodeURIComponent(modelName)}`)
+      .then((r) => r.data),
+}
+
 // ── Procurement Types ──────────────────────────────────────────────────────────
 
 export interface PlanItem {
@@ -192,6 +354,15 @@ export interface PlanItem {
   quantity: number
   estimated_unit_price: number
   note: string
+  item_status: string
+  spec_file_url: string | null
+  spec_uploaded_by: string | null
+  spec_uploaded_at: string | null
+  supplier_name: string | null
+  quoted_unit_price: number | null
+  quoted_at: string | null
+  subtotal: number
+  final_subtotal: number
 }
 
 export interface ProcurementPlan {
@@ -250,4 +421,64 @@ export const procurementApi = {
 
   removeItem: (planId: string, itemId: string) =>
     apiClient.delete(`/procurement-plans/${planId}/items/${itemId}`),
+
+  // Workflow
+  sendToEeReview: (id: string) =>
+    apiClient.post<ProcurementPlan>(`/procurement-plans/${id}/ee-review`).then((r) => r.data),
+
+  markQuoted: (id: string) =>
+    apiClient.post<ProcurementPlan>(`/procurement-plans/${id}/mark-quoted`).then((r) => r.data),
+
+  approvePlan: (id: string) =>
+    apiClient.post<ProcurementPlan>(`/procurement-plans/${id}/approve`).then((r) => r.data),
+
+  submitToBudget: (id: string) =>
+    apiClient.post<ProcurementPlan>(`/procurement-plans/${id}/submit-budget`).then((r) => r.data),
+
+  // Item SPEC / Quote
+  uploadSpec: (planId: string, itemId: string, data: { file_url: string; uploaded_by: string }) =>
+    apiClient
+      .post<PlanItem>(`/procurement-plans/${planId}/items/${itemId}/upload-spec`, data)
+      .then((r) => r.data),
+
+  setQuote: (
+    planId: string,
+    itemId: string,
+    data: { quoted_unit_price: number; supplier_name: string },
+  ) =>
+    apiClient
+      .post<PlanItem>(`/procurement-plans/${planId}/items/${itemId}/set-quote`, data)
+      .then((r) => r.data),
+}
+
+// ── Notification Types ─────────────────────────────────────────────────────────
+
+export interface Notification {
+  id: string
+  title: string
+  message: string
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
+  is_read: boolean
+  link: string | null
+  created_at: string
+}
+
+export interface UnreadCount {
+  count: number
+}
+
+// ── Notification API ───────────────────────────────────────────────────────────
+
+export const notificationsApi = {
+  list: (unreadOnly = false) =>
+    apiClient
+      .get<Notification[]>('/notifications/', { params: { unread_only: unreadOnly } })
+      .then((r) => r.data),
+
+  unreadCount: () => apiClient.get<UnreadCount>('/notifications/unread-count').then((r) => r.data),
+
+  markRead: (id: string) =>
+    apiClient.patch<Notification>(`/notifications/${id}/read`).then((r) => r.data),
+
+  markAllRead: () => apiClient.post('/notifications/read-all'),
 }

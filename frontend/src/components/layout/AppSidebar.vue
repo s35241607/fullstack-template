@@ -9,6 +9,8 @@
     ListTodo,
     Workflow,
     ShoppingCart,
+    ClipboardList,
+    PauseCircle,
   } from 'lucide-vue-next'
 
   defineProps<{
@@ -31,6 +33,11 @@
   ]
 
   const procurementNavItems = [{ name: '採購計畫', path: '/procurement/plans', icon: ShoppingCart }]
+
+  const orderNavItems = [
+    { name: '訂單列表', path: '/orders', icon: ClipboardList },
+    { name: 'On-Hold 總覽', path: '/orders/holds', icon: PauseCircle },
+  ]
 </script>
 
 <template>
@@ -137,6 +144,37 @@
         <div class="space-y-0.5">
           <RouterLink
             v-for="item in procurementNavItems"
+            :key="item.path"
+            :to="item.path"
+            class="flex items-center gap-3 px-2.5 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors group"
+            active-class="!bg-accent !text-foreground font-medium"
+            :title="collapsed ? item.name : undefined"
+          >
+            <component :is="item.icon" class="shrink-0" :size="17" />
+            <span
+              class="whitespace-nowrap transition-all duration-200 overflow-hidden"
+              :class="collapsed ? 'opacity-0 w-0' : 'opacity-100'"
+            >
+              {{ item.name }}
+            </span>
+          </RouterLink>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="mx-3 my-2 border-t border-border/60" />
+
+      <!-- Orders -->
+      <div class="px-3">
+        <div
+          v-if="!collapsed"
+          class="px-1 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60"
+        >
+          訂單管理
+        </div>
+        <div class="space-y-0.5">
+          <RouterLink
+            v-for="item in orderNavItems"
             :key="item.path"
             :to="item.path"
             class="flex items-center gap-3 px-2.5 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors group"

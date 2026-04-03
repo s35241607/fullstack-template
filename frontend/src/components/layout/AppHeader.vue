@@ -1,28 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Menu, Search, Sun, Moon, X, Home, ChevronRight, Bell } from 'lucide-vue-next'
-import { useDark, useToggle } from '@vueuse/core'
-import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
+  import { ref } from 'vue'
+  import { Menu, Search, Sun, Moon, X, Home, ChevronRight } from 'lucide-vue-next'
+  import { useDark, useToggle } from '@vueuse/core'
+  import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
+  import NotificationPanel from '@/components/layout/NotificationPanel.vue'
 
-defineEmits<{
-  toggleSidebar: []
-}>()
+  defineEmits<{
+    toggleSidebar: []
+  }>()
 
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
-const { breadcrumbs } = useBreadcrumbs()
+  const isDark = useDark()
+  const toggleDark = useToggle(isDark)
+  const { breadcrumbs } = useBreadcrumbs()
 
-const searchOpen = ref(false)
-const searchQuery = ref('')
+  const searchOpen = ref(false)
+  const searchQuery = ref('')
 
-function closeSearch() {
-  searchOpen.value = false
-  searchQuery.value = ''
-}
+  function closeSearch() {
+    searchOpen.value = false
+    searchQuery.value = ''
+  }
 
-function onSearchKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') closeSearch()
-}
+  function onSearchKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') closeSearch()
+  }
 </script>
 
 <template>
@@ -101,7 +102,9 @@ function onSearchKeydown(e: KeyboardEvent) {
             >
               <Search :size="16" />
               <span class="hidden lg:inline text-xs">Search</span>
-              <kbd class="hidden lg:inline-flex items-center text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border/60 font-mono text-muted-foreground">
+              <kbd
+                class="hidden lg:inline-flex items-center text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border/60 font-mono text-muted-foreground"
+              >
                 ⌘K
               </kbd>
             </button>
@@ -119,13 +122,7 @@ function onSearchKeydown(e: KeyboardEvent) {
         </button>
 
         <!-- Notifications -->
-        <button
-          class="relative p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell :size="18" />
-          <span class="absolute top-1 right-1 w-1.5 h-1.5 bg-primary rounded-full"></span>
-        </button>
+        <NotificationPanel />
 
         <!-- Theme toggle -->
         <button
@@ -145,7 +142,9 @@ function onSearchKeydown(e: KeyboardEvent) {
           class="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity"
           aria-label="User profile"
         >
-          <div class="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+          <div
+            class="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold"
+          >
             JD
           </div>
         </button>
@@ -173,30 +172,30 @@ function onSearchKeydown(e: KeyboardEvent) {
 </template>
 
 <style scoped>
-.search-expand-enter-active,
-.search-expand-leave-active {
-  transition:
-    opacity 0.15s ease,
-    width 0.2s ease;
-  overflow: hidden;
-}
-.search-expand-enter-from,
-.search-expand-leave-to {
-  opacity: 0;
-  width: 0;
-}
+  .search-expand-enter-active,
+  .search-expand-leave-active {
+    transition:
+      opacity 0.15s ease,
+      width 0.2s ease;
+    overflow: hidden;
+  }
+  .search-expand-enter-from,
+  .search-expand-leave-to {
+    opacity: 0;
+    width: 0;
+  }
 
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition:
-    max-height 0.2s ease,
-    opacity 0.15s ease;
-  overflow: hidden;
-  max-height: 60px;
-}
-.slide-down-enter-from,
-.slide-down-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
+  .slide-down-enter-active,
+  .slide-down-leave-active {
+    transition:
+      max-height 0.2s ease,
+      opacity 0.15s ease;
+    overflow: hidden;
+    max-height: 60px;
+  }
+  .slide-down-enter-from,
+  .slide-down-leave-to {
+    max-height: 0;
+    opacity: 0;
+  }
 </style>

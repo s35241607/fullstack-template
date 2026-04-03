@@ -70,6 +70,25 @@ const router = createRouter({
       component: () => import('@/views/procurement/ProcurementPlanDetailView.vue'),
       meta: { breadcrumb: '計畫詳情' },
     },
+    // Order Routes
+    {
+      path: '/orders',
+      name: 'orders',
+      component: () => import('@/views/orders/OrdersView.vue'),
+      meta: { breadcrumb: '訂單管理' },
+    },
+    {
+      path: '/orders/holds',
+      name: 'hold-summary',
+      component: () => import('@/views/orders/HoldSummaryView.vue'),
+      meta: { breadcrumb: 'On-Hold 總覽' },
+    },
+    {
+      path: '/orders/:id',
+      name: 'order-detail',
+      component: () => import('@/views/orders/OrderDetailView.vue'),
+      meta: { breadcrumb: '訂單詳情' },
+    },
   ],
 })
 

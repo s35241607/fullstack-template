@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -26,10 +26,38 @@ class PlanItemUpdateRequest(BaseModel):
     note: str | None = None
 
 
-class PlanItemResponse(PlanItemBase):
+class UploadSpecRequest(BaseModel):
+    """Request schema for uploading SPEC to a PlanItem."""
+
+    file_url: str = Field(..., min_length=1)
+    uploaded_by: str = Field(..., min_length=1)
+
+
+class SetQuoteRequest(BaseModel):
+    """Request schema for setting a quote on a PlanItem."""
+
+    quoted_unit_price: float = Field(..., ge=0)
+    supplier_name: str = Field(..., min_length=1)
+
+
+class PlanItemResponse(BaseModel):
     """Response schema for a PlanItem."""
 
     id: UUID
+    equipment_name: str
+    specification: str
+    quantity: int
+    estimated_unit_price: float
+    note: str
+    item_status: str
+    spec_file_url: str | None
+    spec_uploaded_by: str | None
+    spec_uploaded_at: datetime | None
+    supplier_name: str | None
+    quoted_unit_price: float | None
+    quoted_at: datetime | None
+    subtotal: float
+    final_subtotal: float
 
     model_config = {"from_attributes": True}
 

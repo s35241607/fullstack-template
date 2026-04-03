@@ -4,23 +4,30 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.procurement.handlers.plan_command_handler import (
+    ApprovePlanCommand,
     CreatePlanCommand,
     DeletePlanCommand,
+    MarkQuotedCommand,
     ProcurementPlanCommandHandler,
+    SendToEeReviewCommand,
     SubmitPlanCommand,
+    SubmitToBudgetCommand,
     UpdatePlanCommand,
 )
 from app.application.procurement.handlers.plan_item_command_handler import (
     AddItemCommand,
     PlanItemCommandHandler,
     RemoveItemCommand,
+    SetQuoteCommand,
     UpdateItemCommand,
+    UploadSpecCommand,
 )
 from app.application.procurement.handlers.plan_query_handler import (
     GetPlanQuery,
     ListPlansQuery,
     ProcurementPlanQueryHandler,
 )
+from app.domain.procurement.entities.plan_item import PlanItem
 from app.domain.procurement.entities.procurement_plan import ProcurementPlan
 from app.domain.shared.exceptions import BusinessRuleViolationError, EntityNotFoundError
 from app.infrastructure.database.repositories.sqlalchemy_procurement_plan_repository import (
@@ -34,6 +41,8 @@ from app.interfaces.api.v1.schemas.procurement_plan_schema import (
     ProcurementPlanCreateRequest,
     ProcurementPlanResponse,
     ProcurementPlanUpdateRequest,
+    SetQuoteRequest,
+    UploadSpecRequest,
 )
 
 router = APIRouter(prefix="/procurement-plans", tags=["procurement-plans"])
@@ -61,6 +70,26 @@ def get_plan_query_handler(
     return ProcurementPlanQueryHandler(_get_repository(session))
 
 
+def _item_to_response(item: PlanItem) -> PlanItemResponse:
+    return PlanItemResponse(
+        id=item.id,
+        equipment_name=item.equipment_name,
+        specification=item.specification,
+        quantity=item.quantity,
+        estimated_unit_price=item.estimated_unit_price,
+        note=item.note,
+        item_status=item.item_status.value,
+        spec_file_url=item.spec_file_url,
+        spec_uploaded_by=item.spec_uploaded_by,
+        spec_uploaded_at=item.spec_uploaded_at,
+        supplier_name=item.supplier_name,
+        quoted_unit_price=item.quoted_unit_price,
+        quoted_at=item.quoted_at,
+        subtotal=item.subtotal,
+        final_subtotal=item.final_subtotal,
+    )
+
+
 def _plan_to_response(plan: ProcurementPlan) -> ProcurementPlanResponse:
     return ProcurementPlanResponse(
         id=plan.id,
@@ -68,17 +97,7 @@ def _plan_to_response(plan: ProcurementPlan) -> ProcurementPlanResponse:
         planned_date=plan.planned_date,
         status=plan.status.value,
         total_amount=plan.total_amount,
-        items=[
-            PlanItemResponse(
-                id=item.id,
-                equipment_name=item.equipment_name,
-                specification=item.specification,
-                quantity=item.quantity,
-                estimated_unit_price=item.estimated_unit_price,
-                note=item.note,
-            )
-            for item in plan.items
-        ],
+        items=[_item_to_response(item) for item in plan.items],
     )
 
 
@@ -176,14 +195,7 @@ async def add_item(
                 note=body.note,
             )
         )
-        return PlanItemResponse(
-            id=item.id,
-            equipment_name=item.equipment_name,
-            specification=item.specification,
-            quantity=item.quantity,
-            estimated_unit_price=item.estimated_unit_price,
-            note=item.note,
-        )
+        return _item_to_response(item)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except BusinessRuleViolationError as e:
@@ -209,14 +221,7 @@ async def update_item(
                 note=body.note,
             )
         )
-        return PlanItemResponse(
-            id=item.id,
-            equipment_name=item.equipment_name,
-            specification=item.specification,
-            quantity=item.quantity,
-            estimated_unit_price=item.estimated_unit_price,
-            note=item.note,
-        )
+        return _item_to_response(item)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except BusinessRuleViolationError as e:
@@ -231,6 +236,114 @@ async def remove_item(
 ) -> None:
     try:
         await handler.handle_remove(RemoveItemCommand(plan_id=plan_id, item_id=item_id))
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except BusinessRuleViolationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+
+
+# --- Workflow endpoints ---
+
+
+@router.post("/{plan_id}/ee-review", response_model=ProcurementPlanResponse)
+async def send_to_ee_review(
+    plan_id: UUID,
+    handler: ProcurementPlanCommandHandler = Depends(get_plan_command_handler),
+) -> ProcurementPlanResponse:
+    try:
+        plan = await handler.handle_send_to_ee_review(SendToEeReviewCommand(plan_id=plan_id))
+        return _plan_to_response(plan)
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except BusinessRuleViolationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+
+
+@router.post("/{plan_id}/mark-quoted", response_model=ProcurementPlanResponse)
+async def mark_quoted(
+    plan_id: UUID,
+    handler: ProcurementPlanCommandHandler = Depends(get_plan_command_handler),
+) -> ProcurementPlanResponse:
+    try:
+        plan = await handler.handle_mark_quoted(MarkQuotedCommand(plan_id=plan_id))
+        return _plan_to_response(plan)
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except BusinessRuleViolationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+
+
+@router.post("/{plan_id}/approve", response_model=ProcurementPlanResponse)
+async def approve_plan(
+    plan_id: UUID,
+    handler: ProcurementPlanCommandHandler = Depends(get_plan_command_handler),
+) -> ProcurementPlanResponse:
+    try:
+        plan = await handler.handle_approve(ApprovePlanCommand(plan_id=plan_id))
+        return _plan_to_response(plan)
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except BusinessRuleViolationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+
+
+@router.post("/{plan_id}/submit-budget", response_model=ProcurementPlanResponse)
+async def submit_to_budget(
+    plan_id: UUID,
+    handler: ProcurementPlanCommandHandler = Depends(get_plan_command_handler),
+) -> ProcurementPlanResponse:
+    try:
+        plan = await handler.handle_submit_to_budget(SubmitToBudgetCommand(plan_id=plan_id))
+        return _plan_to_response(plan)
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except BusinessRuleViolationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+
+
+# --- Item SPEC / Quote endpoints ---
+
+
+@router.post("/{plan_id}/items/{item_id}/upload-spec", response_model=PlanItemResponse)
+async def upload_spec(
+    plan_id: UUID,
+    item_id: UUID,
+    body: UploadSpecRequest,
+    handler: PlanItemCommandHandler = Depends(get_plan_item_command_handler),
+) -> PlanItemResponse:
+    try:
+        item = await handler.handle_upload_spec(
+            UploadSpecCommand(
+                plan_id=plan_id,
+                item_id=item_id,
+                file_url=body.file_url,
+                uploaded_by=body.uploaded_by,
+            )
+        )
+        return _item_to_response(item)
+    except EntityNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except BusinessRuleViolationError as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
+
+
+@router.post("/{plan_id}/items/{item_id}/set-quote", response_model=PlanItemResponse)
+async def set_quote(
+    plan_id: UUID,
+    item_id: UUID,
+    body: SetQuoteRequest,
+    handler: PlanItemCommandHandler = Depends(get_plan_item_command_handler),
+) -> PlanItemResponse:
+    try:
+        item = await handler.handle_set_quote(
+            SetQuoteCommand(
+                plan_id=plan_id,
+                item_id=item_id,
+                quoted_unit_price=body.quoted_unit_price,
+                supplier_name=body.supplier_name,
+            )
+        )
+        return _item_to_response(item)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except BusinessRuleViolationError as e:
