@@ -13,6 +13,7 @@
     Ban,
   } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
+  import AppDatePicker from '@/components/ui/DatePicker/AppDatePicker.vue'
 
   const router = useRouter()
   const { orders, isLoading, error, createOrder, deleteOrder, cancelOrder, refresh } = useOrders()
@@ -191,20 +192,12 @@
             />
           </div>
           <div>
-            <label class="text-xs text-muted-foreground">訂單日期 *</label>
-            <input
-              v-model="newOrderDate"
-              type="date"
-              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
+            <label class="text-xs text-muted-foreground mb-1 block">訂單日期 *</label>
+            <AppDatePicker v-model="newOrderDate" placeholder="訂單日期" />
           </div>
           <div>
-            <label class="text-xs text-muted-foreground">預期交貨日 *</label>
-            <input
-              v-model="newExpectedDate"
-              type="date"
-              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
+            <label class="text-xs text-muted-foreground mb-1 block">預期交貨日 *</label>
+            <AppDatePicker v-model="newExpectedDate" placeholder="預期交貨日" />
           </div>
         </div>
         <div>

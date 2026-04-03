@@ -16,6 +16,7 @@
     PlayCircle,
   } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
+  import AppDatePicker from '@/components/ui/DatePicker/AppDatePicker.vue'
 
   const route = useRoute()
   const router = useRouter()
@@ -408,12 +409,8 @@
               />
             </div>
             <div>
-              <label class="text-xs text-muted-foreground">交期</label>
-              <input
-                v-model="newDeliveryDate"
-                type="date"
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
+              <label class="text-xs text-muted-foreground mb-1 block">交期</label>
+              <AppDatePicker v-model="newDeliveryDate" placeholder="選填" />
             </div>
           </div>
           <div class="flex justify-end">

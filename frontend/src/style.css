@@ -36,7 +36,9 @@
 /* Dark mode via .dark class (synced with @vueuse/core useDark) */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* HSL token definitions — light & dark */
+/* ══════════════════════════════════════════════════════
+   BASE THEME — Slate (default)
+   ══════════════════════════════════════════════════════ */
 @layer base {
   :root {
     --background: 210 20% 96%;
@@ -94,7 +96,117 @@
     --input: 217 33% 18%;
     --ring: 212.7 26.8% 83.9%;
   }
+}
 
+/* ══════════════════════════════════════════════════════
+   THEME — Blue
+   ══════════════════════════════════════════════════════ */
+@layer base {
+  :root[data-theme='blue'] {
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 217 91% 60%;
+    --accent: 214 100% 96%;
+    --accent-foreground: 217 91% 30%;
+  }
+
+  :root[data-theme='blue'].dark {
+    --primary: 213 94% 68%;
+    --primary-foreground: 220 50% 8%;
+    --ring: 213 94% 68%;
+    --accent: 215 50% 18%;
+    --accent-foreground: 213 94% 90%;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   THEME — Violet
+   ══════════════════════════════════════════════════════ */
+@layer base {
+  :root[data-theme='violet'] {
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 262 83% 58%;
+    --accent: 270 100% 96%;
+    --accent-foreground: 262 60% 30%;
+  }
+
+  :root[data-theme='violet'].dark {
+    --primary: 263 70% 70%;
+    --primary-foreground: 265 50% 8%;
+    --ring: 263 70% 70%;
+    --accent: 263 40% 20%;
+    --accent-foreground: 263 70% 90%;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   THEME — Rose
+   ══════════════════════════════════════════════════════ */
+@layer base {
+  :root[data-theme='rose'] {
+    --primary: 346 77% 49%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 346 77% 49%;
+    --accent: 355 100% 96%;
+    --accent-foreground: 346 60% 30%;
+  }
+
+  :root[data-theme='rose'].dark {
+    --primary: 346 80% 68%;
+    --primary-foreground: 350 50% 8%;
+    --ring: 346 80% 68%;
+    --accent: 346 40% 20%;
+    --accent-foreground: 346 80% 90%;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   THEME — Amber
+   ══════════════════════════════════════════════════════ */
+@layer base {
+  :root[data-theme='amber'] {
+    --primary: 32 95% 44%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 32 95% 44%;
+    --accent: 40 100% 94%;
+    --accent-foreground: 30 80% 25%;
+  }
+
+  :root[data-theme='amber'].dark {
+    --primary: 38 92% 58%;
+    --primary-foreground: 35 50% 8%;
+    --ring: 38 92% 58%;
+    --accent: 35 50% 18%;
+    --accent-foreground: 38 92% 85%;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   THEME — Teal
+   ══════════════════════════════════════════════════════ */
+@layer base {
+  :root[data-theme='teal'] {
+    --primary: 172 66% 36%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 172 66% 36%;
+    --accent: 168 100% 94%;
+    --accent-foreground: 172 60% 20%;
+  }
+
+  :root[data-theme='teal'].dark {
+    --primary: 172 60% 52%;
+    --primary-foreground: 175 50% 8%;
+    --ring: 172 60% 52%;
+    --accent: 172 40% 18%;
+    --accent-foreground: 172 60% 88%;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   GLOBAL BASE STYLES
+   ══════════════════════════════════════════════════════ */
+@layer base {
   * {
     border-color: hsl(var(--border));
   }
@@ -129,4 +241,23 @@
     font-size: 0.875rem;
     border-radius: var(--radius);
   }
+}
+
+/* ══════════════════════════════════════════════════════
+   TOP PROGRESS BAR
+   ══════════════════════════════════════════════════════ */
+.progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+  z-index: 9999;
+  background-color: hsl(var(--primary));
+  transform-origin: left center;
+  transition:
+    width 0.1s ease,
+    opacity 0.3s ease;
+  box-shadow: 0 0 6px hsl(var(--primary) / 0.6);
 }

@@ -13,6 +13,7 @@
     Eye,
   } from 'lucide-vue-next'
   import { toast } from 'vue-sonner'
+  import AppDatePicker from '@/components/ui/DatePicker/AppDatePicker.vue'
 
   const router = useRouter()
   const { plans, isLoading, error, createPlan, deletePlan, submitPlan, refresh } =
@@ -139,11 +140,9 @@
           class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
           @keydown.enter="handleCreate"
         />
-        <input
-          v-model="newDate"
-          type="date"
-          class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
-        />
+        <div class="w-48 shrink-0">
+          <AppDatePicker v-model="newDate" placeholder="預計採購日" />
+        </div>
         <button
           :disabled="!newName.trim() || !newDate || isCreating"
           class="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shrink-0"
