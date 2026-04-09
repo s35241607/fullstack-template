@@ -1,71 +1,97 @@
 import { ref, watch } from 'vue'
-import { useDark } from '@vueuse/core'
+import { useDark, useToggle } from '@vueuse/core'
 
-export type ThemeColor = 'slate' | 'blue' | 'violet' | 'rose' | 'amber' | 'teal'
+/**
+ * Standard shadcn/ui Theme Composable.
+ * Manages dark mode, layout width, and color themes.
+ */
 
-export interface ThemeDef {
-  id: ThemeColor
+export interface ThemeConfig {
+  id: string
   label: string
-  color: string // preview swatch hex
+  color: string
 }
 
-export const THEMES: ThemeDef[] = [
-  { id: 'slate', label: 'Slate', color: '#64748b' },
+export const themes: ThemeConfig[] = [
+  { id: 'zinc', label: 'Zinc', color: '#18181b' },
   { id: 'blue', label: 'Blue', color: '#3b82f6' },
   { id: 'violet', label: 'Violet', color: '#8b5cf6' },
   { id: 'rose', label: 'Rose', color: '#f43f5e' },
-  { id: 'amber', label: 'Amber', color: '#f59e0b' },
-  { id: 'teal', label: 'Teal', color: '#14b8a6' },
+  { id: 'orange', label: 'Orange', color: '#f97316' },
+  { id: 'green', label: 'Green', color: '#22c55e' },
 ]
 
-const STORAGE_KEY = 'app-theme-color'
+export const surfaces = [
+  { id: 'zinc', label: 'Zinc', color: '#09090b' },
+  { id: 'slate', label: 'Slate', color: '#020617' },
+  { id: 'gray', label: 'Gray', color: '#030712' },
+  { id: 'neutral', label: 'Neutral', color: '#0a0a0a' },
+  { id: 'stone', label: 'Stone', color: '#0c0a09' },
+]
+
+const THEME_STORAGE_KEY = 'app-color-theme'
+const SURFACE_STORAGE_KEY = 'app-surface-theme'
 const WIDTH_STORAGE_KEY = 'app-layout-width'
 
-const currentTheme = ref<ThemeColor>(
-  (localStorage.getItem(STORAGE_KEY) as ThemeColor) ?? 'slate',
-)
+// Global state
+const currentTheme = ref<string>(localStorage.getItem(THEME_STORAGE_KEY) || 'zinc')
+const currentSurface = ref<string>(localStorage.getItem(SURFACE_STORAGE_KEY) || 'zinc')
 const isNarrow = ref<boolean>(localStorage.getItem(WIDTH_STORAGE_KEY) === 'narrow')
 
-function applyTheme(theme: ThemeColor) {
-  const root = document.documentElement
-  // Remove all theme data attrs
-  THEMES.forEach((t) => root.removeAttribute(`data-theme-${t.id}`))
-  if (theme !== 'slate') {
-    root.setAttribute(`data-theme`, theme)
-  } else {
-    root.removeAttribute('data-theme')
-  }
-}
-
-// Apply on load
-applyTheme(currentTheme.value)
-
-watch(currentTheme, (val) => {
-  applyTheme(val)
-  localStorage.setItem(STORAGE_KEY, val)
-})
-
-watch(isNarrow, (val) => {
-  localStorage.setItem(WIDTH_STORAGE_KEY, val ? 'narrow' : 'wide')
-})
-
 export function useTheme() {
-  const dark = useDark()
-
-  function setTheme(theme: ThemeColor) {
-    currentTheme.value = theme
-  }
+  const isDark = useDark()
+  const toggleDark = useToggle(isDark)
 
   function toggleWidth() {
     isNarrow.value = !isNarrow.value
+    localStorage.setItem(WIDTH_STORAGE_KEY, isNarrow.value ? 'narrow' : 'wide')
   }
 
+  function setTheme(themeId: string) {
+    currentTheme.value = themeId
+    localStorage.setItem(THEME_STORAGE_KEY, themeId)
+  }
+
+  function setSurface(surfaceId: string) {
+    currentSurface.value = surfaceId
+    localStorage.setItem(SURFACE_STORAGE_KEY, surfaceId)
+  }
+
+  function applyTheme(theme: string, surface: string) {
+    if (typeof window !== 'undefined') {
+      const root = document.documentElement
+      
+      // Theme (Primary Color)
+      if (theme && theme !== 'zinc') {
+        root.setAttribute('data-theme', theme)
+      } else {
+        root.removeAttribute('data-theme')
+      }
+
+      // Surface (Neutral Colors)
+      if (surface && surface !== 'zinc') {
+        root.setAttribute('data-surface', surface)
+      } else {
+        root.removeAttribute('data-surface')
+      }
+    }
+  }
+
+  // Watch for changes and apply them
+  watch([currentTheme, currentSurface], ([newTheme, newSurface]) => {
+    applyTheme(newTheme, newSurface)
+  }, { immediate: true })
+
   return {
-    currentTheme,
+    isDark,
+    toggleDark,
     isNarrow,
-    themes: THEMES,
-    setTheme,
     toggleWidth,
-    isDark: dark,
+    themes,
+    currentTheme,
+    setTheme,
+    surfaces,
+    currentSurface,
+    setSurface,
   }
 }

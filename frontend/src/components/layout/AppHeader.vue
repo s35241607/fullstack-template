@@ -1,27 +1,17 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
   import {
+    Search,
     Sun,
     Moon,
-    Home,
+    User,
+    LogOut,
+    Settings,
     Palette,
-    Check,
-    Search,
-    AlignCenter,
-    AlignJustify,
   } from 'lucide-vue-next'
-  import { useDark, useToggle, onClickOutside } from '@vueuse/core'
-  import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
   import { useTheme } from '@/composables/useTheme'
-  import NotificationPanel from '@/components/layout/NotificationPanel.vue'
-  import CommandPalette from '@/components/layout/CommandPalette.vue'
+  import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
+  import NotificationPanel from './NotificationPanel.vue'
   import { SidebarTrigger } from '@/components/ui/sidebar'
-  import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-  } from '@/components/ui/tooltip'
   import {
     Breadcrumb,
     BreadcrumbItem,
@@ -30,236 +20,195 @@
     BreadcrumbPage,
     BreadcrumbSeparator,
   } from '@/components/ui/breadcrumb'
+  import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+  } from '@/components/ui/dropdown-menu'
 
-  const isDark = useDark()
-  const toggleDark = useToggle(isDark)
+  const {
+    isDark,
+    toggleDark,
+    themes,
+    currentTheme,
+    setTheme,
+    surfaces,
+    currentSurface,
+    setSurface,
+  } = useTheme()
   const { breadcrumbs } = useBreadcrumbs()
-  const { currentTheme, themes, isNarrow, setTheme, toggleWidth } = useTheme()
 
-  // Theme popover
-  const themePopoverOpen = ref(false)
-  const themePopoverRef = ref<HTMLElement | null>(null)
-
-  onClickOutside(themePopoverRef, () => {
-    themePopoverOpen.value = false
-  })
-
-  // Command palette
-  const cmdPaletteRef = ref<InstanceType<typeof CommandPalette> | null>(null)
-
-  function openCommandPalette() {
-    cmdPaletteRef.value?.open()
+  const openCommandPalette = () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))
   }
 </script>
 
 <template>
-  <CommandPalette ref="cmdPaletteRef" />
+  <header
+    class="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+  >
+    <div class="flex h-14 items-center px-4 gap-4">
+      <div class="flex items-center gap-2">
+        <SidebarTrigger />
+        <div class="h-4 w-[1px] bg-border mx-1 hidden md:block" />
+        <Breadcrumb class="hidden md:flex">
+          <BreadcrumbList>
+            <template v-for="(crumb, index) in breadcrumbs" :key="crumb.path">
+              <BreadcrumbItem>
+                <BreadcrumbLink v-if="index < breadcrumbs.length - 1" as-child>
+                  <RouterLink :to="crumb.path">{{ crumb.name }}</RouterLink>
+                </BreadcrumbLink>
+                <BreadcrumbPage v-else>{{ crumb.name }}</BreadcrumbPage>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator v-if="index < breadcrumbs.length - 1" />
+            </template>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
 
-  <div class="shrink-0">
-    <header class="flex items-center h-14 px-4 gap-3 border-b border-border bg-card shadow-sm z-20 relative">
-      <SidebarTrigger class="-ml-2" />
+      <div class="ml-auto flex items-center gap-2">
+        <!-- Search Bar -->
+        <button
+          @click="openCommandPalette"
+          class="relative hidden h-9 w-64 items-center justify-start rounded-md border border-input bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted md:flex"
+        >
+          <Search class="mr-2 h-4 w-4" />
+          <span>Search...</span>
+          <kbd
+            class="pointer-events-none absolute right-1.5 top-1.5 hidden h-6 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex"
+          >
+            <span class="text-xs">⌘</span>K
+          </kbd>
+        </button>
 
-      <!-- Breadcrumbs: Using officially supported shadcn-vue component -->
-      <Breadcrumb class="flex-1 min-w-0">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink as-child>
-              <RouterLink to="/" aria-label="Home">
-                <Home class="size-4" />
-              </RouterLink>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          
-          <template v-for="(crumb, i) in breadcrumbs" :key="crumb.path">
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink v-if="i < breadcrumbs.length - 1" as-child>
-                <RouterLink :to="crumb.path" class="max-w-[120px] truncate">
-                  {{ crumb.name }}
-                </RouterLink>
-              </BreadcrumbLink>
-              <BreadcrumbPage v-else class="max-w-[150px] truncate">
-                {{ crumb.name }}
-              </BreadcrumbPage>
-            </BreadcrumbItem>
-          </template>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <!-- Right side actions -->
-      <div class="flex items-center gap-1 shrink-0">
-        <TooltipProvider :delay-duration="400">
-          <!-- Search / Command palette trigger -->
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <button
-                class="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-sm"
-                aria-label="Open search"
-                @click="openCommandPalette"
-              >
-                <Search :size="16" />
-                <span class="hidden lg:inline text-xs">Search</span>
-                <kbd class="hidden lg:inline-flex items-center text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border/60 font-mono text-muted-foreground">
-                  ⌘K
-                </kbd>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">搜尋 (Ctrl+K)</TooltipContent>
-          </Tooltip>
-
-          <!-- Search icon (mobile) -->
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <button
-                class="md:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                aria-label="Open search"
-                @click="openCommandPalette"
-              >
-                <Search :size="18" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">搜尋</TooltipContent>
-          </Tooltip>
-
-          <!-- Notifications -->
+        <div class="flex items-center gap-1">
+          <!-- Notification -->
           <NotificationPanel />
 
-          <!-- Layout width toggle -->
-          <Tooltip>
-            <TooltipTrigger as-child>
+          <!-- Theme -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
               <button
-                class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                :aria-label="isNarrow ? 'Switch to wide layout' : 'Switch to narrow layout'"
-                @click="toggleWidth"
+                class="flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <AlignJustify v-if="isNarrow" :size="18" />
-                <AlignCenter v-else :size="18" />
+                <Palette class="h-4 w-4" />
               </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {{ isNarrow ? '切換寬版（延伸全寬）' : '切換窄版（靠中對齊）' }}
-            </TooltipContent>
-          </Tooltip>
-
-          <!-- Theme color picker -->
-          <div class="relative" ref="themePopoverRef">
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <button
-                  class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  aria-label="Choose theme color"
-                  @click="themePopoverOpen = !themePopoverOpen"
-                >
-                  <Palette :size="18" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">主題顏色</TooltipContent>
-            </Tooltip>
-
-            <!-- Color palette popover -->
-            <Transition name="popover">
-              <div
-                v-if="themePopoverOpen"
-                class="absolute right-0 top-full mt-2 w-44 bg-popover border border-border rounded-xl shadow-xl p-3 z-50"
-              >
-                <p class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-1">
-                  主題顏色
-                </p>
-                <div class="grid grid-cols-3 gap-1.5">
-                  <button
-                    v-for="theme in themes"
-                    :key="theme.id"
-                    class="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-accent transition-colors group"
-                    :title="theme.label"
-                    @click="setTheme(theme.id); themePopoverOpen = false"
-                  >
-                    <span
-                      class="relative flex items-center justify-center size-7 rounded-full border-2 transition-all"
-                      :style="{ backgroundColor: theme.color, borderColor: currentTheme === theme.id ? theme.color : 'transparent' }"
-                    >
-                      <Check v-if="currentTheme === theme.id" :size="13" class="text-white drop-shadow" />
-                    </span>
-                    <span class="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors">
-                      {{ theme.label }}
-                    </span>
-                  </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="w-64 p-3">
+              <div class="space-y-4">
+                <div>
+                  <h4 class="text-sm font-semibold leading-none mb-1">配色方案</h4>
+                  <p class="text-[11px] text-muted-foreground">選擇您的應用程式主色與底色</p>
                 </div>
 
-                <div class="mt-3 pt-2.5 border-t border-border">
-                  <p class="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 px-1">
-                    外觀
-                  </p>
-                  <div class="flex gap-1.5">
+                <!-- Primary Colors -->
+                <div class="space-y-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-1">主色調</span>
+                  <div class="grid grid-cols-3 gap-2">
                     <button
-                      class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-colors"
-                      :class="!isDark ? 'bg-primary text-primary-foreground' : 'hover:bg-accent text-muted-foreground'"
+                      v-for="theme in themes"
+                      :key="theme.id"
+                      class="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-accent transition-all group relative border border-transparent"
+                      :class="{ 'border-primary/20 bg-accent/50': currentTheme === theme.id }"
+                      @click="setTheme(theme.id)"
+                    >
+                      <span
+                        class="flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all shadow-sm"
+                        :style="{ backgroundColor: theme.color, borderColor: currentTheme === theme.id ? 'white' : 'transparent' }"
+                      >
+                        <Check v-if="currentTheme === theme.id" :size="12" class="text-white drop-shadow-sm" />
+                      </span>
+                      <span class="text-[10px] font-medium text-muted-foreground group-hover:text-foreground">
+                        {{ theme.label }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Surface Colors -->
+                <div class="space-y-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-1">底色風格</span>
+                  <div class="grid grid-cols-3 gap-2">
+                    <button
+                      v-for="surface in surfaces"
+                      :key="surface.id"
+                      class="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-accent transition-all group relative border border-transparent"
+                      :class="{ 'border-primary/20 bg-accent/50': currentSurface === surface.id }"
+                      @click="setSurface(surface.id)"
+                    >
+                      <span
+                        class="flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all shadow-sm"
+                        :style="{ backgroundColor: surface.color, borderColor: currentSurface === surface.id ? 'white' : 'transparent' }"
+                      >
+                        <Check v-if="currentSurface === surface.id" :size="12" class="text-white drop-shadow-sm" />
+                      </span>
+                      <span class="text-[10px] font-medium text-muted-foreground group-hover:text-foreground">
+                        {{ surface.label }}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="pt-2 border-t border-border">
+                  <h4 class="text-sm font-semibold leading-none mb-2">外觀模式</h4>
+                  <div class="flex p-1 bg-muted rounded-lg border border-border/50">
+                    <button
+                      class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-all"
+                      :class="!isDark ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
                       @click="isDark && toggleDark()"
                     >
-                      <Sun :size="12" />
+                      <Sun :size="14" />
                       亮色
                     </button>
                     <button
-                      class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-colors"
-                      :class="isDark ? 'bg-primary text-primary-foreground' : 'hover:bg-accent text-muted-foreground'"
+                      class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-all"
+                      :class="isDark ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
                       @click="!isDark && toggleDark()"
                     >
-                      <Moon :size="12" />
+                      <Moon :size="14" />
                       深色
                     </button>
                   </div>
                 </div>
               </div>
-            </Transition>
-          </div>
-
-          <!-- Dark/light quick toggle -->
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <button
-                class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-                @click="toggleDark()"
-              >
-                <Sun v-if="isDark" :size="18" />
-                <Moon v-else :size="18" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {{ isDark ? '切換亮色模式' : '切換深色模式' }}
-            </TooltipContent>
-          </Tooltip>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <!-- Divider -->
-          <div class="w-px h-5 bg-border mx-1"></div>
+          <div class="h-4 w-[1px] bg-border mx-1" />
 
-          <!-- User avatar -->
-          <Tooltip>
-            <TooltipTrigger as-child>
+          <!-- User -->
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
               <button
-                class="flex items-center gap-2 rounded-full hover:opacity-80 transition-opacity"
-                aria-label="User profile"
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-sm transition-transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <div class="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                  JD
-                </div>
+                JD
               </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">使用者設定</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User class="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings class="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem class="text-destructive focus:bg-destructive focus:text-destructive-foreground">
+                <LogOut class="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </header>
-  </div>
+    </div>
+  </header>
 </template>
-
-<style scoped>
-.popover-enter-active,
-.popover-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.popover-enter-from,
-.popover-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(-4px);
-}
-</style>

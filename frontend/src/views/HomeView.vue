@@ -11,16 +11,16 @@
   onMounted(async () => {
     try {
       const [orders, holds, plans] = await Promise.all([
-        ordersApi.list().catch(() => ({ data: [] })),
-        ordersApi.holdSummary().catch(() => ({ data: [] })),
-        procurementApi.list().catch(() => ({ data: [] })),
+        ordersApi.list().catch(() => []),
+        ordersApi.holdSummary().catch(() => []),
+        procurementApi.listPlans().catch(() => []),
       ])
-      orderCount.value = orders.data.length
-      holdCount.value = (holds.data as Array<{ total_hold_quantity: number }>).reduce(
+      orderCount.value = orders.length
+      holdCount.value = (holds as Array<{ total_hold_quantity: number }>).reduce(
         (sum, m) => sum + m.total_hold_quantity,
         0,
       )
-      planCount.value = plans.data.length
+      planCount.value = plans.length
     } finally {
       loading.value = false
     }

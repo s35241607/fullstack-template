@@ -34,7 +34,6 @@
   const newNote = ref('')
   const isAdding = ref(false)
   const removingId = ref<string | null>(null)
-  const isSubmitting = ref(false)
   const isWorkflowAction = ref(false)
 
   // Spec upload form - per item

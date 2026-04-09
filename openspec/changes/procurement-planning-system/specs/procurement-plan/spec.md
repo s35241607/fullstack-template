@@ -20,7 +20,7 @@
 
 #### Scenario: 查詢所有計畫
 - **WHEN** 使用者請求採購計畫列表
-- **THEN** 系統回傳所有採購計畫，每筆包含 ID、名稱、預計採購日期、狀態、項目數量
+- **THEN** 系統回傳所有採購計畫，每筆包含 ID、名稱、預計採購日期、狀態、項目數量、Sourcing 進度
 
 #### Scenario: 無計畫時查詢
 - **WHEN** 系統中沒有任何採購計畫且使用者請求列表
@@ -31,7 +31,7 @@
 
 #### Scenario: 成功查詢計畫
 - **WHEN** 使用者以有效 ID 查詢採購計畫
-- **THEN** 系統回傳該計畫完整資料，包含所有關聯的計畫項目
+- **THEN** 系統回傳該計畫完整資料，包含所有關聯的計畫項目及其分配狀態
 
 #### Scenario: 查詢不存在的計畫
 - **WHEN** 使用者以不存在的 ID 查詢
@@ -44,32 +44,30 @@
 - **WHEN** 使用者更新一筆狀態為 DRAFT 的計畫名稱或預計採購日期
 - **THEN** 系統更新計畫資料並回傳更新後的計畫
 
-#### Scenario: 更新已提交的計畫
-- **WHEN** 使用者嘗試更新狀態為 SUBMITTED 的計畫
+#### Scenario: 更新非草稿狀態的計畫
+- **WHEN** 使用者嘗試更新非 DRAFT 狀態的計畫基本資訊
 - **THEN** 系統拒絕更新並回傳業務規則錯誤
 
 ### Requirement: 刪除採購計畫
-系統 SHALL 允許使用者刪除採購計畫，連同其所有計畫項目一併刪除。
+系統 SHALL 允許使用者刪除草稿狀態的採購計畫，連同其所有計畫項目一併刪除。
 
-#### Scenario: 成功刪除計畫
-- **WHEN** 使用者刪除一筆採購計畫
+#### Scenario: 成功刪除草稿計畫
+- **WHEN** 使用者刪除一筆 DRAFT 狀態的採購計畫
 - **THEN** 系統刪除該計畫及其所有關聯項目，回傳 204
+
+#### Scenario: 刪除非草稿計畫
+- **WHEN** 使用者嘗試刪除非 DRAFT 狀態的計畫
+- **THEN** 系統拒絕操作，提示需先取消計畫
 
 #### Scenario: 刪除不存在的計畫
 - **WHEN** 使用者嘗試刪除不存在的計畫
 - **THEN** 系統回傳 404 錯誤
 
-### Requirement: 提交採購計畫
-系統 SHALL 允許使用者將草稿計畫提交。提交後計畫不可再編輯。
+## MODIFIED Requirements
 
-#### Scenario: 成功提交計畫
-- **WHEN** 使用者提交一筆狀態為 DRAFT 且至少包含一筆項目的計畫
-- **THEN** 系統將計畫狀態變更為 SUBMITTED
+### Requirement: 計畫狀態管理（Phase 2 擴充）
+系統的計畫狀態從 Phase 1 的 DRAFT/SUBMITTED 擴充為完整的生命週期狀態機。
 
-#### Scenario: 提交無項目的計畫
-- **WHEN** 使用者嘗試提交一筆沒有任何項目的計畫
-- **THEN** 系統拒絕提交並回傳業務規則錯誤
-
-#### Scenario: 重複提交已提交的計畫
-- **WHEN** 使用者嘗試提交一筆已經是 SUBMITTED 狀態的計畫
-- **THEN** 系統拒絕操作並回傳業務規則錯誤
+#### Scenario: 狀態枚舉
+- **THEN** 計畫狀態包含：DRAFT、SOURCING、ALL_RESOLVED、FINALIZED、SUBMITTED
+- **AND** 狀態轉換規則參見 fcst-lifecycle spec
