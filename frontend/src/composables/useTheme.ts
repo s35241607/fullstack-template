@@ -22,11 +22,11 @@ export const themes: ThemeConfig[] = [
 ]
 
 export const surfaces = [
-  { id: 'zinc', label: 'Zinc', color: '#09090b' },
-  { id: 'slate', label: 'Slate', color: '#020617' },
-  { id: 'gray', label: 'Gray', color: '#030712' },
-  { id: 'neutral', label: 'Neutral', color: '#0a0a0a' },
-  { id: 'stone', label: 'Stone', color: '#0c0a09' },
+  { id: 'zinc', label: 'Zinc', color: '#71717a' },
+  { id: 'slate', label: 'Slate', color: '#475569' },
+  { id: 'gray', label: 'Gray', color: '#4b5563' },
+  { id: 'neutral', label: 'Neutral', color: '#525252' },
+  { id: 'stone', label: 'Stone', color: '#57534e' },
 ]
 
 const THEME_STORAGE_KEY = 'app-color-theme'
