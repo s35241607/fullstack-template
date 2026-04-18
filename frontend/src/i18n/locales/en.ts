@@ -4,34 +4,14 @@ const en = {
   nav: {
     groups: {
       main: 'Main',
-      workflow: 'Workflow',
-      procurement: 'Procurement',
-      orders: 'Orders',
       system: 'System',
     },
     items: {
       home: 'Dashboard',
-      items: 'Items',
-      bpmnDefinitions: 'Processes',
-      bpmnDefinitionDetail: 'Process Detail',
-      bpmnInstances: 'Instances',
-      bpmnTasks: 'My Tasks',
-      procurementPlans: 'Procurement Plans',
-      procurementPlanDetail: 'Plan Detail',
-      orders: 'Orders',
-      orderDetail: 'Order Detail',
-      holdSummary: 'On-Hold Summary',
       about: 'About',
     },
     desc: {
       home: 'Overview dashboard',
-      items: 'Manage item catalog',
-      bpmnDefinitions: 'Process definition management',
-      bpmnInstances: 'Active process instances',
-      bpmnTasks: 'My pending tasks',
-      procurementPlans: 'Manage & submit procurement plans',
-      orders: 'Manage purchase orders',
-      holdSummary: 'View On-Hold order summary',
       about: 'About this system',
     },
   },
@@ -77,27 +57,10 @@ const en = {
   },
 
   home: {
-    title: 'Enterprise Procurement System',
-    subtitle: 'Order Tracking · On-Hold Management · Procurement Approval',
-    stats: {
-      orders: 'Active Orders',
-      holds: 'Hold Quantity',
-      plans: 'Procurement Plans',
-    },
+    title: 'Fullstack Template',
+    subtitle: 'Vue 3 + TypeScript + FastAPI + SQLAlchemy',
     modules: 'Modules',
     moduleCards: {
-      orders: {
-        title: 'Order Management',
-        desc: 'View all purchase orders, item details, receipt records and delivery tracking',
-      },
-      holds: {
-        title: 'On-Hold Overview',
-        desc: 'Summarize hold quantities by model, quickly grasp hold status',
-      },
-      procurement: {
-        title: 'Procurement Plans',
-        desc: 'Create and manage procurement plans with full approval workflow',
-      },
       api: {
         title: 'API Documentation',
         desc: 'FastAPI auto-generated OpenAPI documentation',
@@ -107,7 +70,7 @@ const en = {
 
   sidebar: {
     appSubtitle: 'Enterprise Platform',
-    copyright: '© 2026 Lan Side Project',
+    copyright: '© 2026 Fullstack Template',
   },
 
   command: {

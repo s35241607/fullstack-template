@@ -1,15 +1,4 @@
-import {
-  ClipboardList,
-  GitFork,
-  Info,
-  LayoutDashboard,
-  ListTodo,
-  Package,
-  PauseCircle,
-  ShoppingCart,
-  Workflow,
-  type LucideIcon,
-} from 'lucide-vue-next'
+import { Info, LayoutDashboard, type LucideIcon } from 'lucide-vue-next'
 
 export interface AppNavItem {
   id: string
@@ -39,73 +28,6 @@ export const appNavGroups: AppNavGroup[] = [
         path: '/',
         icon: LayoutDashboard,
         description: 'nav.desc.home',
-      },
-      {
-        id: 'items',
-        name: 'nav.items.items',
-        path: '/items',
-        icon: Package,
-        description: 'nav.desc.items',
-      },
-    ],
-  },
-  {
-    id: 'workflow',
-    label: 'nav.groups.workflow',
-    items: [
-      {
-        id: 'bpmn-definitions',
-        name: 'nav.items.bpmnDefinitions',
-        path: '/bpmn/definitions',
-        icon: Workflow,
-        description: 'nav.desc.bpmnDefinitions',
-      },
-      {
-        id: 'bpmn-instances',
-        name: 'nav.items.bpmnInstances',
-        path: '/bpmn/instances',
-        icon: GitFork,
-        description: 'nav.desc.bpmnInstances',
-      },
-      {
-        id: 'bpmn-tasks',
-        name: 'nav.items.bpmnTasks',
-        path: '/bpmn/tasks',
-        icon: ListTodo,
-        description: 'nav.desc.bpmnTasks',
-      },
-    ],
-  },
-  {
-    id: 'procurement',
-    label: 'nav.groups.procurement',
-    items: [
-      {
-        id: 'procurement-plans',
-        name: 'nav.items.procurementPlans',
-        path: '/procurement/plans',
-        icon: ShoppingCart,
-        description: 'nav.desc.procurementPlans',
-      },
-    ],
-  },
-  {
-    id: 'orders',
-    label: 'nav.groups.orders',
-    items: [
-      {
-        id: 'orders',
-        name: 'nav.items.orders',
-        path: '/orders',
-        icon: ClipboardList,
-        description: 'nav.desc.orders',
-      },
-      {
-        id: 'hold-summary',
-        name: 'nav.items.holdSummary',
-        path: '/orders/holds',
-        icon: PauseCircle,
-        description: 'nav.desc.holdSummary',
       },
     ],
   },

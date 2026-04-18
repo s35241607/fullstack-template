@@ -6,34 +6,14 @@ const zhTW: MessageSchema = {
   nav: {
     groups: {
       main: '主要',
-      workflow: '工作流程',
-      procurement: '採購管理',
-      orders: '訂單管理',
       system: '系統',
     },
     items: {
       home: '儀表板',
-      items: '品項管理',
-      bpmnDefinitions: '流程定義',
-      bpmnDefinitionDetail: '流程詳情',
-      bpmnInstances: '執行實例',
-      bpmnTasks: '我的任務',
-      procurementPlans: '採購計畫',
-      procurementPlanDetail: '計畫詳情',
-      orders: '訂單列表',
-      orderDetail: '訂單詳情',
-      holdSummary: 'On-Hold 總覽',
       about: '關於',
     },
     desc: {
       home: '首頁總覽',
-      items: '管理品項清單',
-      bpmnDefinitions: '流程定義管理',
-      bpmnInstances: '流程執行中實例',
-      bpmnTasks: '我的待辦任務',
-      procurementPlans: '管理與送審採購計畫',
-      orders: '管理採購訂單',
-      holdSummary: '查看 On-Hold 訂單彙整',
       about: '關於此系統',
     },
   },
@@ -79,27 +59,10 @@ const zhTW: MessageSchema = {
   },
 
   home: {
-    title: '企業採購管理系統',
-    subtitle: '訂單追蹤 · On-Hold 管理 · 採購計畫審核',
-    stats: {
-      orders: '進行中訂單',
-      holds: 'Hold 暫扣總量',
-      plans: '採購計畫',
-    },
+    title: '全端開發範本',
+    subtitle: 'Vue 3 + TypeScript + FastAPI + SQLAlchemy',
     modules: '功能模組',
     moduleCards: {
-      orders: {
-        title: '訂單管理',
-        desc: '查看所有採購訂單、品項明細、收貨紀錄與交期追蹤',
-      },
-      holds: {
-        title: 'On-Hold 總覽',
-        desc: '依機型彙總 Hold 數量，快速掌握暫扣狀況',
-      },
-      procurement: {
-        title: '採購計畫',
-        desc: '建立與管理採購計畫，支援完整審核流程',
-      },
       api: {
         title: 'API 文件',
         desc: 'FastAPI 自動生成的 OpenAPI 文件',
@@ -109,7 +72,7 @@ const zhTW: MessageSchema = {
 
   sidebar: {
     appSubtitle: '企業管理平台',
-    copyright: '© 2026 Lan Side Project',
+    copyright: '© 2026 Fullstack Template',
   },
 
   command: {

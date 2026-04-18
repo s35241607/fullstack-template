@@ -5,20 +5,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import all models so SQLAlchemy registers them before create_all
-import app.infrastructure.database.models.item_model  # noqa: F401
 import app.infrastructure.database.models.notification_model  # noqa: F401
-import app.infrastructure.database.models.process_definition_model  # noqa: F401
-import app.infrastructure.database.models.process_instance_model  # noqa: F401
-import app.infrastructure.database.models.procurement_plan_model  # noqa: F401
-import app.infrastructure.database.models.purchase_order_model  # noqa: F401
 from app.infrastructure.database.session import Base, engine, wait_for_db
-from app.interfaces.api.v1.routers import (
-    bpmn_router,
-    item_router,
-    notification_router,
-    order_router,
-    procurement_plan_router,
-)
+from app.interfaces.api.v1.routers import notification_router
 
 
 @asynccontextmanager
@@ -39,11 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(item_router.router, prefix="/api/v1")
-app.include_router(bpmn_router.router, prefix="/api/v1")
-app.include_router(procurement_plan_router.router, prefix="/api/v1")
 app.include_router(notification_router.router, prefix="/api/v1")
-app.include_router(order_router.router, prefix="/api/v1")
 
 
 @app.get("/")
