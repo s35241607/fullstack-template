@@ -247,11 +247,13 @@
   body { 
     background-color: hsl(var(--background)); 
     color: hsl(var(--foreground)); 
-    font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif; 
+    font-family: 'Plus Jakarta Sans Variable', 'Noto Sans TC', sans-serif; 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Increase letter-spacing for a more modern, breathable look */
+    letter-spacing: 0.015em;
     /* Prevent layout shift when scrollbar appears */
     scrollbar-gutter: stable;
   }

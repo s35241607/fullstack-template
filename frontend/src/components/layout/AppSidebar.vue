@@ -60,7 +60,7 @@
               >
                 <RouterLink :to="item.path" :title="t(item.name)">
                   <component :is="item.icon" />
-                  <span>{{ t(item.name) }}</span>
+                  <span class="font-medium tracking-wide">{{ t(item.name) }}</span>
                 </RouterLink>
               </SidebarMenuButton>
             </SidebarMenuItem>

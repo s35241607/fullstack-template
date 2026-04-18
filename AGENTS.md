@@ -70,9 +70,9 @@ size: {
 
 - **英文字體**：`Plus Jakarta Sans` — 現代幾何 SaaS UI 字體，支援 300–700 weight
 - **中文字體**：`Noto Sans TC` — 繁體中文最佳選擇，fallback 於英文字體之後
-- **CSS 寫法固定**：`font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;`
-- **載入方式**：在 `index.html` 使用 Google Fonts preconnect + `display=swap`
-- ❌ 不要手動加 `font-family` inline，確保 `style.css` 的 `body` 定義就夠了
+- **CSS 寫法固定**：`font-family: 'Plus Jakarta Sans Variable', 'Noto Sans TC', sans-serif;`
+- **載入方式**：使用 `@fontsource` 本地化部署，確保在公司內網 (Intranet) 離線環境下字體仍能正常載入。在 `main.ts` 引入對應 CSS。
+- ❌ 禁止在 `index.html` 使用連結外部 CDN (如 Google Fonts)，確保 100% 離線可用。
 
 ---
 
