@@ -252,7 +252,35 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent layout shift when scrollbar appears */
+    scrollbar-gutter: stable;
   }
+
+  /* Global cursor improvement */
+  button, 
+  [role="button"],
+  a {
+    cursor: pointer;
+  }
+  
+  button:disabled,
+  [role="button"]:disabled {
+    cursor: default;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   PAGE TRANSITIONS
+   ══════════════════════════════════════════════════════ */
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
 }
 
 /* Custom UI Polish */

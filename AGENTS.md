@@ -34,3 +34,33 @@ This file serves as a strict architectural guideline for any Agent working on th
 1. 準備建構複雜的區塊（如：側邊欄、搜尋面板、表格控制）時，先檢查是否有對應的 shadcn CLI 組件可以 `add`。
 2. 開發表單時，考慮使用 `<Form>`, `<FormField>`, `<FormItem>` 的組合，而非單純的 `<div class="grid">` + `<input>`。
 3. 把所有的基底依賴放入 `@/components/ui`（並且保持小寫資料夾名稱 `ui/button/index.ts`），將你的業務視圖和「組裝工廠」放在對應頁面或 `@/components/layout`。
+
+### 5. Inline Class 規範（重要！）
+
+**核心原則：永遠優先修改 `components/ui` 的基底，而不是在外面堆 class。**
+
+**❌ 錯誤做法（每次使用都重複加 class）：**
+```vue
+<!-- 每個地方都要手動加尺寸、顏色、hover — 這是維護地獄 -->
+<SidebarTrigger class="h-9 w-9 text-muted-foreground hover:bg-accent hover:text-foreground transition-all" />
+<Button class="h-9 w-9 text-muted-foreground hover:text-foreground" />
+```
+
+**✅ 正確做法（修改基底一次，所有地方自動套用）：**
+```ts
+// components/ui/button/index.ts — 新增一個語意明確的 variant/size
+size: {
+  'icon-sm': 'h-9 w-9',  // Header toolbar standard
+}
+```
+```vue
+<!-- 使用端只需要傳入 prop，HTML 乾淨易讀 -->
+<Button variant="ghost" size="icon-sm" />
+<SidebarTrigger />  <!-- 基底已設定好，不需要任何 class -->
+```
+
+**決策樹（每次新增樣式前先問自己）：**
+- 這個樣式會在 **2 個以上地方** 重複使用嗎？→ **修改基底組件**
+- 這是某個頁面的**一次性**視覺需求嗎？→ 才可以加 inline class
+- 是「全域通用」的行為（如 cursor-pointer）？→ 寫進 `style.css` 的 `@layer base`
+

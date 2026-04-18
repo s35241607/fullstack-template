@@ -16,8 +16,8 @@ const { toggleSidebar } = useSidebar()
   <Button
     data-sidebar="trigger"
     variant="ghost"
-    size="icon"
-    :class="cn('h-7 w-7 cursor-pointer', props.class)"
+    size="icon-sm"
+    :class="cn('text-muted-foreground hover:text-foreground', props.class)"
     @click="toggleSidebar"
   >
     <PanelLeft />

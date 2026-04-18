@@ -12,6 +12,7 @@
     SidebarHeader,
     SidebarRail,
   } from '@/components/ui/sidebar'
+  import { Heart } from 'lucide-vue-next'
   import { useRoute } from 'vue-router'
   import { appNavGroups } from '@/config/navigation'
 
@@ -29,14 +30,16 @@
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg" tooltip="MyApp">
-            <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-bold shadow-sm">
-              M
-            </div>
-            <div class="grid flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-semibold">MyApp</span>
-              <span class="truncate text-xs">Enterprise Platform</span>
-            </div>
+          <SidebarMenuButton size="lg" tooltip="MyApp" class="cursor-pointer" as-child>
+            <RouterLink to="/">
+              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-bold shadow-sm">
+                M
+              </div>
+              <div class="grid flex-1 text-left text-sm leading-tight">
+                <span class="truncate font-semibold">MyApp</span>
+                <span class="truncate text-xs">Enterprise Platform</span>
+              </div>
+            </RouterLink>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
@@ -60,17 +63,17 @@
       </SidebarGroup>
     </SidebarContent>
 
+    <!-- Footer: Responsive Copyright Notice -->
     <SidebarFooter class="p-4 border-t border-sidebar-border/50">
-      <div class="flex flex-col gap-1 text-[10px] text-muted-foreground font-medium leading-none">
-        <div class="group-data-[collapsible=icon]:hidden">
-          © 2024 MyApp Platform
-        </div>
-        <div class="group-data-[collapsible=icon]:hidden text-[9px] opacity-60">
-          All Rights Reserved
-        </div>
-        <div class="hidden group-data-[collapsible=icon]:flex items-center justify-center font-bold text-xs">
-          ©
-        </div>
+      <!-- Full Copyright (Visible when expanded) -->
+      <div class="group-data-[collapsible=icon]:hidden flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground font-medium leading-tight">
+        <span>© 2026 Lan Side Project</span>
+        <Heart :size="10" class="text-rose-500 fill-rose-500" />
+      </div>
+      
+      <!-- Minimalist Copyright (Visible when collapsed) -->
+      <div class="hidden group-data-[collapsible=icon]:flex items-center justify-center font-bold text-xs text-muted-foreground">
+        ©
       </div>
     </SidebarFooter>
 
