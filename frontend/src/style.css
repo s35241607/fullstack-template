@@ -85,17 +85,17 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 12%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 12%;
+    --accent: 240 3.7% 15%;
     --accent-foreground: 0 0% 98%;
-    --border: 240 3.7% 15%;
-    --input: 240 3.7% 15%;
+    --border: 240 3.7% 24%;
+    --input: 240 3.7% 24%;
     --ring: 240 4.9% 83.9%;
 
     --sidebar: 240 6% 8%;
     --sidebar-foreground: 240 5% 90%;
     --sidebar-accent: 240 4% 15%;
     --sidebar-accent-foreground: 240 5% 98%;
-    --sidebar-border: 240 4% 15%;
+    --sidebar-border: 240 4% 24%;
   }
 }
 
@@ -122,7 +122,7 @@
   --background: 222 47% 7%;
   --card: 222 47% 10%;
   --sidebar: 222 47% 5%;
-  --border: 222 30% 18%;
+  --border: 222 30% 25%;
   --muted: 222 30% 15%;
 }
 
@@ -137,7 +137,7 @@
   --background: 220 15% 10%;
   --card: 220 15% 13%;
   --sidebar: 220 15% 8%;
-  --border: 220 10% 20%;
+  --border: 220 10% 26%;
 }
 
 /* Neutral - Pure Minimalist */
@@ -151,7 +151,7 @@
   --background: 0 0% 4%;
   --card: 0 0% 7%;
   --sidebar: 0 0% 2%;
-  --border: 0 0% 15%;
+  --border: 0 0% 22%;
 }
 
 /* Stone - Warm & Organic */
@@ -165,7 +165,7 @@
   --background: 30 10% 6%;
   --card: 30 10% 9%;
   --sidebar: 30 10% 4%;
-  --border: 30 10% 15%;
+  --border: 30 10% 23%;
 }
 
 /* ══════════════════════════════════════════════════════
