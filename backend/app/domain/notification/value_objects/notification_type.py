@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class NotificationType(str, Enum):
+class NotificationType(StrEnum):
     """通知類型。"""
 
     INFO = "INFO"

@@ -1,13 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
 from uuid import UUID
 
 from app.domain.shared.entity import Entity
 
-E = TypeVar("E", bound=Entity)
 
-
-class Repository(ABC, Generic[E]):
+class Repository[E: Entity](ABC):
     """Base interface for all Repositories."""
 
     @abstractmethod
