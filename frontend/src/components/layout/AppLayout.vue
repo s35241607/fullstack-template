@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
+import CommandPalette from './CommandPalette.vue'
 import { useGlobalLoading } from '@/composables/useGlobalLoading'
 import { useTheme } from '@/composables/useTheme'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
@@ -19,6 +20,7 @@ const { isNarrow } = useTheme()
     />
 
     <AppSidebar />
+    <CommandPalette />
 
     <SidebarInset>
       <AppHeader />

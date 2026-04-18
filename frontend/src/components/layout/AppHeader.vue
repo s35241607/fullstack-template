@@ -3,6 +3,7 @@
     Search,
     Sun,
     Moon,
+    Check,
     User,
     LogOut,
     Settings,
@@ -42,7 +43,7 @@
   const { breadcrumbs } = useBreadcrumbs()
 
   const openCommandPalette = () => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))
+    window.dispatchEvent(new Event('app:command-open'))
   }
 </script>
 
@@ -52,7 +53,7 @@
   >
     <div class="flex h-14 items-center px-4 gap-4">
       <div class="flex items-center gap-2">
-        <SidebarTrigger />
+        <SidebarTrigger class="h-9 w-9" />
         <div class="h-4 w-[1px] bg-border mx-1 hidden md:block" />
         <Breadcrumb class="hidden md:flex">
           <BreadcrumbList>
@@ -73,10 +74,11 @@
         <!-- Search Bar -->
         <button
           @click="openCommandPalette"
-          class="relative hidden h-9 w-64 items-center justify-start rounded-md border border-input bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted md:flex"
+          aria-label="Open command palette"
+          class="relative hidden h-9 w-64 items-center justify-start rounded-md border border-input bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:flex cursor-pointer"
         >
           <Search class="mr-2 h-4 w-4" />
-          <span>Search...</span>
+          <span>Search…</span>
           <kbd
             class="pointer-events-none absolute right-1.5 top-1.5 hidden h-6 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex"
           >
@@ -92,7 +94,8 @@
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <button
-                class="flex h-9 w-9 items-center justify-center rounded-md transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                aria-label="Open theme settings"
+                class="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
               >
                 <Palette class="h-4 w-4" />
               </button>
@@ -111,12 +114,12 @@
                     <button
                       v-for="theme in themes"
                       :key="theme.id"
-                      class="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-accent transition-all group relative border border-transparent"
+                      class="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-accent transition-colors group relative border border-transparent cursor-pointer"
                       :class="{ 'border-primary/20 bg-accent/50': currentTheme === theme.id }"
                       @click="setTheme(theme.id)"
                     >
                       <span
-                        class="flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all shadow-sm"
+                        class="flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors shadow-sm"
                         :style="{ backgroundColor: theme.color, borderColor: currentTheme === theme.id ? 'white' : 'transparent' }"
                       >
                         <Check v-if="currentTheme === theme.id" :size="12" class="text-white drop-shadow-sm" />
@@ -135,12 +138,12 @@
                     <button
                       v-for="surface in surfaces"
                       :key="surface.id"
-                      class="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-accent transition-all group relative border border-transparent"
+                      class="flex flex-col items-center justify-center gap-1.5 p-2 rounded-lg hover:bg-accent transition-colors group relative border border-transparent cursor-pointer"
                       :class="{ 'border-primary/20 bg-accent/50': currentSurface === surface.id }"
                       @click="setSurface(surface.id)"
                     >
                       <span
-                        class="flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all shadow-sm"
+                        class="flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors shadow-sm"
                         :style="{ backgroundColor: surface.color, borderColor: currentSurface === surface.id ? 'white' : 'transparent' }"
                       >
                         <Check v-if="currentSurface === surface.id" :size="12" class="text-white drop-shadow-sm" />
@@ -156,7 +159,7 @@
                   <h4 class="text-sm font-semibold leading-none mb-2">外觀模式</h4>
                   <div class="flex p-1 bg-muted rounded-lg border border-border/50">
                     <button
-                      class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-all"
+                      class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
                       :class="!isDark ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
                       @click="isDark && toggleDark()"
                     >
@@ -164,7 +167,7 @@
                       亮色
                     </button>
                     <button
-                      class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-all"
+                      class="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer"
                       :class="isDark ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
                       @click="!isDark && toggleDark()"
                     >
@@ -184,9 +187,14 @@
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <button
-                class="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-sm transition-transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                aria-label="Open user menu"
+                class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-transparent overflow-hidden transition-all hover:bg-accent hover:border-accent shadow-sm hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
               >
-                JD
+                <img 
+                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" 
+                  alt="Avatar" 
+                  class="h-full w-full object-cover"
+                />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

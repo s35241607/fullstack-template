@@ -69,8 +69,12 @@ function toggleExpand(id: string) {
       </div>
       <div class="flex items-center gap-2">
         <!-- Status filter -->
+        <label for="instance-status-filter" class="sr-only">Filter by status</label>
         <select
+          id="instance-status-filter"
           v-model="filterStatus"
+          name="status_filter"
+          autocomplete="off"
           class="rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <option value="">All statuses</option>

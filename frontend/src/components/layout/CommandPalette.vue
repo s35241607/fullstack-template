@@ -1,14 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMagicKeys } from '@vueuse/core'
-import {
-  Home,
-  Package,
-  ShoppingCart,
-  Workflow,
-  Info,
-} from 'lucide-vue-next'
+import { onKeyStroke } from '@vueuse/core'
 
 import {
   CommandDialog,
@@ -18,27 +11,19 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
+import { appNavGroups } from '@/config/navigation'
 
 const router = useRouter()
 const isOpen = ref(false)
 
-// ── Expose open method for AppHeader ─────────────────────────────────
-defineExpose({
-  open() {
-    isOpen.value = true
-  },
-})
-
 // ── Global Ctrl+K Shortcut ──────────────────────────────────────────
-const { ctrl_k, meta_k } = useMagicKeys()
-
-watch([ctrl_k, meta_k], ([c, m]) => {
-  if (c || m) {
+onKeyStroke(['k', 'K'], (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    e.preventDefault()
     isOpen.value = !isOpen.value
   }
 })
 
-// ── All navigable pages ─────────────────────────────────────────────
 interface NavItem {
   id: string
   label: string
@@ -48,94 +33,36 @@ interface NavItem {
   group: string
 }
 
-const pages: NavItem[] = [
-  {
-    id: 'home',
-    label: 'Dashboard',
-    description: '首頁總覽',
-    icon: Home,
-    route: '/',
-    group: '頁面',
-  },
-  {
-    id: 'items',
-    label: 'Items',
-    description: '管理品項清單',
-    icon: Package,
-    route: '/items',
-    group: '頁面',
-  },
-  {
-    id: 'orders',
-    label: '訂單管理',
-    description: '管理採購訂單',
-    icon: ShoppingCart,
-    route: '/orders',
-    group: '頁面',
-  },
-  {
-    id: 'hold-summary',
-    label: 'On-Hold 總覽',
-    description: '查看 On-Hold 訂單彙整',
-    icon: ShoppingCart,
-    route: '/orders/holds',
-    group: '頁面',
-  },
-  {
-    id: 'procurement-plans',
-    label: '採購計畫',
-    description: '管理與送審採購計畫',
-    icon: Package,
-    route: '/procurement/plans',
-    group: '頁面',
-  },
-  {
-    id: 'bpmn-definitions',
-    label: 'Processes',
-    description: '流程定義管理',
-    icon: Workflow,
-    route: '/bpmn/definitions',
-    group: '頁面',
-  },
-  {
-    id: 'bpmn-instances',
-    label: 'Process Instances',
-    description: '流程執行中實例',
-    icon: Workflow,
-    route: '/bpmn/instances',
-    group: '頁面',
-  },
-  {
-    id: 'bpmn-tasks',
-    label: 'My Tasks',
-    description: '我的待辦任務',
-    icon: Workflow,
-    route: '/bpmn/tasks',
-    group: '頁面',
-  },
-  {
-    id: 'about',
-    label: 'About',
-    description: '關於此系統',
-    icon: Info,
-    route: '/about',
-    group: '頁面',
-  },
-]
-
-// Group the items
-const groupedPages = pages.reduce((acc, page) => {
-  if (!acc[page.group]) {
-    acc[page.group] = []
-  }
-  acc[page.group].push(page)
-  return acc
-}, {} as Record<string, NavItem[]>)
+const groupedPages = computed<Record<string, NavItem[]>>(() => {
+  return appNavGroups.reduce((acc, group) => {
+    acc[group.label] = group.items.map((item) => ({
+      id: item.id,
+      label: item.name,
+      description: item.description,
+      icon: item.icon,
+      route: item.path,
+      group: group.label,
+    }))
+    return acc
+  }, {} as Record<string, NavItem[]>)
+})
 
 const handleSelect = (item: NavItem) => {
   isOpen.value = false
   router.push(item.route)
 }
+
+const openCommandPalette = () => {
+  isOpen.value = true
+}
+
+onMounted(() => {
+  window.addEventListener('app:command-open', openCommandPalette)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('app:command-open', openCommandPalette)
+})
 </script>
 
 <template>

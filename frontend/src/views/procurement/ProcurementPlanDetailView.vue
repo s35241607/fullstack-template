@@ -429,43 +429,60 @@
         <!-- Add item form -->
         <div v-if="showAddForm && isDraft" class="p-4 border-b border-border bg-muted/10 space-y-2">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label for="new-plan-item-equipment" class="sr-only">設備名稱</label>
             <input
+              id="new-plan-item-equipment"
               v-model="newEquipment"
               type="text"
+              name="equipment_name"
+              autocomplete="off"
               placeholder="設備名稱 *"
               class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+            <label for="new-plan-item-spec" class="sr-only">規格</label>
             <input
+              id="new-plan-item-spec"
               v-model="newSpec"
               type="text"
+              name="specification"
+              autocomplete="off"
               placeholder="規格"
               class="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
-              <label class="text-xs text-muted-foreground">數量</label>
+              <label for="new-plan-item-qty" class="text-xs text-muted-foreground">數量</label>
               <input
+                id="new-plan-item-qty"
                 v-model.number="newQty"
                 type="number"
+                name="quantity"
+                autocomplete="off"
                 min="1"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             <div>
-              <label class="text-xs text-muted-foreground">預估單價</label>
+              <label for="new-plan-item-est-price" class="text-xs text-muted-foreground">預估單價</label>
               <input
+                id="new-plan-item-est-price"
                 v-model.number="newPrice"
                 type="number"
+                name="estimated_unit_price"
+                autocomplete="off"
                 min="0"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             <div>
-              <label class="text-xs text-muted-foreground">備註</label>
+              <label for="new-plan-item-note" class="text-xs text-muted-foreground">備註</label>
               <input
+                id="new-plan-item-note"
                 v-model="newNote"
                 type="text"
+                name="note"
+                autocomplete="off"
                 placeholder="選填"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
@@ -538,7 +555,7 @@
                 <button
                   v-if="
                     ['EE_REVIEW', 'QUOTED'].includes(plan.status) &&
-                    ['PENDING', 'SPEC_UPLOADED'].includes(item.item_status)
+                      ['PENDING', 'SPEC_UPLOADED'].includes(item.item_status)
                   "
                   class="flex items-center gap-1 px-2 py-1 rounded text-xs text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 transition-colors"
                   @click="quoteItemId = quoteItemId === item.id ? null : item.id"
@@ -550,6 +567,7 @@
                 <button
                   v-if="isDraft"
                   class="p-1.5 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                  :aria-label="`移除 ${item.equipment_name}`"
                   title="移除"
                   :disabled="removingId === item.id"
                   @click="handleRemoveItem(item.id, item.equipment_name)"
@@ -567,9 +585,7 @@
             >
               <FileUp :size="12" class="text-purple-600 shrink-0" />
               <span class="text-foreground">SPEC：{{ item.spec_file_url }}</span>
-              <span v-if="item.spec_uploaded_by" class="text-muted-foreground"
-                >by {{ item.spec_uploaded_by }}</span
-              >
+              <span v-if="item.spec_uploaded_by" class="text-muted-foreground">by {{ item.spec_uploaded_by }}</span>
               <span v-if="item.spec_uploaded_at" class="text-muted-foreground">{{
                 item.spec_uploaded_at?.slice(0, 10)
               }}</span>
@@ -583,19 +599,25 @@
               <p class="text-xs font-medium text-purple-700 dark:text-purple-400">上傳 SPEC 檔案</p>
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="text-xs text-muted-foreground">檔案連結 *</label>
+                  <label :for="`spec-url-${item.id}`" class="text-xs text-muted-foreground">檔案連結 *</label>
                   <input
+                    :id="`spec-url-${item.id}`"
                     v-model="specUrl"
                     type="text"
+                    name="spec_url"
+                    autocomplete="off"
                     placeholder="https://..."
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label class="text-xs text-muted-foreground">上傳人 *</label>
+                  <label :for="`spec-by-${item.id}`" class="text-xs text-muted-foreground">上傳人 *</label>
                   <input
+                    :id="`spec-by-${item.id}`"
                     v-model="specBy"
                     type="text"
+                    name="uploaded_by"
+                    autocomplete="off"
                     placeholder="你的名字"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
@@ -621,19 +643,25 @@
               <p class="text-xs font-medium text-cyan-700 dark:text-cyan-400">設定供應商報價</p>
               <div class="grid grid-cols-2 gap-2">
                 <div>
-                  <label class="text-xs text-muted-foreground">報價單價 *</label>
+                  <label :for="`quote-price-${item.id}`" class="text-xs text-muted-foreground">報價單價 *</label>
                   <input
+                    :id="`quote-price-${item.id}`"
                     v-model.number="quotePrice"
                     type="number"
+                    name="quoted_unit_price"
+                    autocomplete="off"
                     min="0"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label class="text-xs text-muted-foreground">供應商名稱 *</label>
+                  <label :for="`quote-supplier-${item.id}`" class="text-xs text-muted-foreground">供應商名稱 *</label>
                   <input
+                    :id="`quote-supplier-${item.id}`"
                     v-model="quoteSupplier"
                     type="text"
+                    name="supplier_name"
+                    autocomplete="off"
                     placeholder="供應商名稱"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />

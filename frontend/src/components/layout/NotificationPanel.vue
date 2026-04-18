@@ -41,7 +41,7 @@
   <Popover>
     <PopoverTrigger as-child>
       <button
-        class="relative p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        class="relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
         aria-label="Notifications"
       >
         <Bell :size="18" />
@@ -65,7 +65,7 @@
         <h3 class="text-sm font-semibold text-foreground">通知</h3>
         <button
           v-if="unreadCount > 0"
-          class="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          class="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           @click="markAllRead"
         >
           <CheckCheck :size="14" />
@@ -91,7 +91,7 @@
           <button
             v-for="n in notifications"
             :key="n.id"
-            class="flex items-start gap-3 w-full px-4 py-3 text-left hover:bg-accent/50 transition-colors border-b border-border/50 last:border-b-0"
+            class="flex items-start gap-3 w-full px-4 py-3 text-left hover:bg-accent/50 transition-colors border-b border-border/50 last:border-b-0 cursor-pointer"
             :class="{ 'bg-accent/20': !n.is_read }"
             @click="!n.is_read && markRead(n.id)"
           >

@@ -19,6 +19,8 @@ export function useConfirm() {
    * to true (user confirmed) or false (user dismissed).
    */
   function confirm(opts: ConfirmOptions): Promise<boolean> {
+    // If a confirm is already pending, resolve it as cancelled to avoid dangling promises.
+    resolveFn?.(false)
     options.value = opts
     isOpen.value = true
     return new Promise<boolean>((resolve) => {

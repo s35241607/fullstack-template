@@ -3,6 +3,8 @@ import { useItems } from '@/composables/useItems'
 import { ref } from 'vue'
 import { Plus, Trash2, RefreshCw, AlertCircle, PackageOpen, Loader2 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 const { items, isLoading, error, createItem, deleteItem, refresh } = useItems()
 
@@ -78,20 +80,30 @@ async function handleDelete(id: string, name: string) {
         <h2 class="text-sm font-medium text-foreground">New item</h2>
       </div>
       <div class="p-4 flex flex-col sm:flex-row gap-2">
-        <input
-          v-model="newName"
-          type="text"
-          placeholder="Name *"
-          class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
-          @keydown.enter="handleCreate"
-        />
-        <input
-          v-model="newDescription"
-          type="text"
-          placeholder="Description (optional)"
-          class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
-          @keydown.enter="handleCreate"
-        />
+        <div class="flex-1">
+          <Label for="new-item-name" class="sr-only">Item name</Label>
+          <Input
+            id="new-item-name"
+            v-model="newName"
+            type="text"
+            name="name"
+            autocomplete="off"
+            placeholder="Name *"
+            @keydown.enter="handleCreate"
+          />
+        </div>
+        <div class="flex-1">
+          <Label for="new-item-description" class="sr-only">Item description</Label>
+          <Input
+            id="new-item-description"
+            v-model="newDescription"
+            type="text"
+            name="description"
+            autocomplete="off"
+            placeholder="Description (optional)"
+            @keydown.enter="handleCreate"
+          />
+        </div>
         <button
           :disabled="!newName.trim() || isCreating"
           class="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity shrink-0"

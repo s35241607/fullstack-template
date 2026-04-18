@@ -44,6 +44,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --background: 240 5% 96%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
@@ -71,6 +72,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 240 10% 4%;
     --foreground: 0 0% 98%;
     --card: 240 10% 6%;
@@ -94,6 +96,13 @@
     --sidebar-accent: 240 4% 15%;
     --sidebar-accent-foreground: 240 5% 98%;
     --sidebar-border: 240 4% 15%;
+  }
+}
+
+@layer utilities {
+  .layout-wide {
+    width: 100%;
+    max-width: none;
   }
 }
 
@@ -254,4 +263,13 @@
     border-radius: 10px;
   }
   ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -15,6 +15,7 @@
   import { toast } from 'vue-sonner'
   import DatePicker from '@/components/ui/date-picker/DatePicker.vue'
   import { Input } from '@/components/ui/input'
+  import { Label } from '@/components/ui/label'
   import { useConfirm } from '@/composables/useConfirm'
 
   const router = useRouter()
@@ -151,8 +152,12 @@
         <h2 class="text-sm font-medium text-foreground">新增採購計畫</h2>
       </div>
       <div class="p-4 flex flex-col sm:flex-row gap-3">
+        <Label for="new-procurement-plan-name" class="sr-only">計畫名稱</Label>
         <Input
+          id="new-procurement-plan-name"
           v-model="newName"
+          name="plan_name"
+          autocomplete="off"
           placeholder="計畫名稱 *"
           class="flex-1"
           @keydown.enter="handleCreate"
@@ -247,6 +252,7 @@
               <div class="flex items-center justify-end gap-1">
                 <button
                   class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  :aria-label="`檢視 ${plan.name} 詳情`"
                   title="檢視詳情"
                   @click="router.push({ name: 'procurement-plan-detail', params: { id: plan.id } })"
                 >
@@ -255,6 +261,7 @@
                 <button
                   v-if="plan.status === 'DRAFT'"
                   class="p-1.5 rounded-md text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                  :aria-label="`送審 ${plan.name}`"
                   title="送審"
                   :disabled="submittingId === plan.id || plan.items.length === 0"
                   @click="handleSubmit(plan.id, plan.name)"
@@ -265,6 +272,7 @@
                 <button
                   v-if="plan.status === 'DRAFT'"
                   class="p-1.5 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                  :aria-label="`刪除 ${plan.name}`"
                   title="刪除"
                   :disabled="deletingId === plan.id"
                   @click="handleDelete(plan.id, plan.name)"

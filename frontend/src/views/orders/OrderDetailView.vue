@@ -371,56 +371,74 @@
         <div v-if="showAddItem && isOpen" class="p-5 border-b border-border bg-muted/10 space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div class="space-y-1.5">
-              <Label>項次 <span class="text-destructive">*</span></Label>
+              <Label for="new-order-item-number">項次 <span class="text-destructive">*</span></Label>
               <Input
+                id="new-order-item-number"
                 v-model.number="newItemNumber"
                 type="number"
+                name="item_number"
+                autocomplete="off"
                 min="1"
               />
             </div>
             <div class="space-y-1.5">
-              <Label>物料名稱 <span class="text-destructive">*</span></Label>
+              <Label for="new-order-item-material">物料名稱 <span class="text-destructive">*</span></Label>
               <Input
+                id="new-order-item-material"
                 v-model="newMaterialName"
+                name="material_name"
+                autocomplete="off"
                 placeholder="物料名稱"
               />
             </div>
             <div class="space-y-1.5">
-              <Label>機型</Label>
+              <Label for="new-order-item-model">機型</Label>
               <Input
+                id="new-order-item-model"
                 v-model="newModelName"
+                name="model_name"
+                autocomplete="off"
                 placeholder="例如 A123"
               />
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div class="space-y-1.5">
-              <Label>規格</Label>
+              <Label for="new-order-item-spec">規格</Label>
               <Input
+                id="new-order-item-spec"
                 v-model="newSpec"
+                name="specification"
+                autocomplete="off"
                 placeholder="選填"
               />
             </div>
             <div class="space-y-1.5">
-              <Label>數量</Label>
+              <Label for="new-order-item-qty">數量</Label>
               <Input
+                id="new-order-item-qty"
                 v-model.number="newQty"
                 type="number"
+                name="quantity"
+                autocomplete="off"
                 min="1"
               />
             </div>
             <div class="space-y-1.5">
-              <Label>單價</Label>
+              <Label for="new-order-item-unit-price">單價</Label>
               <Input
+                id="new-order-item-unit-price"
                 v-model.number="newUnitPrice"
                 type="number"
+                name="unit_price"
+                autocomplete="off"
                 min="0"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             <div>
-              <label class="text-xs text-muted-foreground mb-1 block">交期</label>
-              <DatePicker v-model="newDeliveryDate" placeholder="選填" />
+              <label for="new-order-item-delivery-date" class="text-xs text-muted-foreground mb-1 block">交期</label>
+              <DatePicker id="new-order-item-delivery-date" v-model="newDeliveryDate" placeholder="選填" />
             </div>
           </div>
           <div class="flex justify-end">
@@ -503,7 +521,7 @@
             <div class="flex items-center gap-3">
               <div class="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                 <div
-                  class="h-full bg-green-500 rounded-full transition-all"
+                  class="h-full bg-green-500 rounded-full transition-[width]"
                   :style="{
                     width:
                       item.quantity > 0
@@ -528,36 +546,48 @@
               <p class="text-xs font-medium text-blue-700 dark:text-blue-400">登錄到貨紀錄</p>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
-                  <label class="text-xs text-muted-foreground">到貨數量 *</label>
+                  <label :for="`rec-qty-${item.id}`" class="text-xs text-muted-foreground">到貨數量 *</label>
                   <input
+                    :id="`rec-qty-${item.id}`"
                     v-model.number="recQty"
                     type="number"
+                    name="receiving_quantity"
+                    autocomplete="off"
                     min="1"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label class="text-xs text-muted-foreground">到貨日期 *</label>
+                  <label :for="`rec-date-${item.id}`" class="text-xs text-muted-foreground">到貨日期 *</label>
                   <input
+                    :id="`rec-date-${item.id}`"
                     v-model="recDate"
                     type="datetime-local"
+                    name="receiving_date"
+                    autocomplete="off"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label class="text-xs text-muted-foreground">驗收人</label>
+                  <label :for="`rec-inspector-${item.id}`" class="text-xs text-muted-foreground">驗收人</label>
                   <input
+                    :id="`rec-inspector-${item.id}`"
                     v-model="recInspector"
                     type="text"
+                    name="inspector"
+                    autocomplete="off"
                     placeholder="選填"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label class="text-xs text-muted-foreground">備註</label>
+                  <label :for="`rec-note-${item.id}`" class="text-xs text-muted-foreground">備註</label>
                   <input
+                    :id="`rec-note-${item.id}`"
                     v-model="recNote"
                     type="text"
+                    name="note"
+                    autocomplete="off"
                     placeholder="選填"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
@@ -583,28 +613,37 @@
               <p class="text-xs font-medium text-amber-700 dark:text-amber-400">設定 On-Hold</p>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div>
-                  <label class="text-xs text-muted-foreground">Hold 數量 *</label>
+                  <label :for="`hold-qty-${item.id}`" class="text-xs text-muted-foreground">Hold 數量 *</label>
                   <input
+                    :id="`hold-qty-${item.id}`"
                     v-model.number="holdQty"
                     type="number"
+                    name="hold_quantity"
+                    autocomplete="off"
                     min="1"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label class="text-xs text-muted-foreground">原因 *</label>
+                  <label :for="`hold-reason-${item.id}`" class="text-xs text-muted-foreground">原因 *</label>
                   <input
+                    :id="`hold-reason-${item.id}`"
                     v-model="holdReason"
                     type="text"
+                    name="hold_reason"
+                    autocomplete="off"
                     placeholder="Hold 原因"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div>
-                  <label class="text-xs text-muted-foreground">操作人 *</label>
+                  <label :for="`hold-by-${item.id}`" class="text-xs text-muted-foreground">操作人 *</label>
                   <input
+                    :id="`hold-by-${item.id}`"
                     v-model="holdBy"
                     type="text"
+                    name="held_by"
+                    autocomplete="off"
                     placeholder="你的名字"
                     class="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
@@ -634,9 +673,7 @@
                   <PackageCheck :size="12" class="text-green-600 shrink-0" />
                   <span class="text-foreground">數量 {{ rec.received_quantity }}</span>
                   <span class="text-muted-foreground">{{ rec.received_date?.slice(0, 10) }}</span>
-                  <span v-if="rec.inspector" class="text-muted-foreground"
-                    >驗收人：{{ rec.inspector }}</span
-                  >
+                  <span v-if="rec.inspector" class="text-muted-foreground">驗收人：{{ rec.inspector }}</span>
                   <span v-if="rec.note" class="text-muted-foreground">{{ rec.note }}</span>
                 </div>
               </div>

@@ -3,7 +3,7 @@
  * AlertDialog — handles confirmation modals globally.
  * Follows shadcn naming and styles.
  */
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { AlertTriangle, Trash2, X } from 'lucide-vue-next'
 import { useConfirm } from '@/composables/useConfirm'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,20 @@ defineProps<Props>()
 const { isOpen, options, handleConfirm, handleCancel } = useConfirm()
 
 const isDestructive = computed(() => options.value.variant === 'destructive')
+const cancelButtonRef = ref<HTMLButtonElement | null>(null)
+
+const titleId = 'global-confirm-title'
+const descriptionId = 'global-confirm-description'
+
+watch(isOpen, async (opened) => {
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = opened ? 'hidden' : ''
+  }
+  if (opened) {
+    await nextTick()
+    cancelButtonRef.value?.focus()
+  }
+})
 </script>
 
 <template>
@@ -43,6 +57,10 @@ const isDestructive = computed(() => options.value.variant === 'destructive')
             )"
             role="alertdialog"
             aria-modal="true"
+            :aria-labelledby="titleId"
+            :aria-describedby="descriptionId"
+            tabindex="-1"
+            @keydown.esc.prevent="handleCancel"
           >
             <!-- Header -->
             <div class="flex items-start gap-4 p-6 pb-4 text-left">
@@ -62,17 +80,17 @@ const isDestructive = computed(() => options.value.variant === 'destructive')
               </div>
 
               <div class="flex-1 min-w-0">
-                <h2 class="text-base font-semibold text-foreground leading-tight">
+                <h2 :id="titleId" class="text-base font-semibold text-foreground leading-tight">
                   {{ options.title }}
                 </h2>
-                <p class="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                <p :id="descriptionId" class="mt-1.5 text-sm text-muted-foreground leading-relaxed">
                   {{ options.message }}
                 </p>
               </div>
 
               <!-- Close button -->
               <button
-                class="text-muted-foreground hover:text-foreground transition-colors shrink-0 -mt-1 -mr-1"
+                class="text-muted-foreground hover:text-foreground transition-colors shrink-0 -mt-1 -mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Close"
                 @click="handleCancel"
               >
@@ -83,13 +101,14 @@ const isDestructive = computed(() => options.value.variant === 'destructive')
             <!-- Actions -->
             <div class="flex gap-2 justify-end px-6 py-4 bg-muted/20 border-t border-border">
               <button
-                class="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent border border-border transition-colors outline-none"
+                ref="cancelButtonRef"
+                class="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent border border-border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 @click="handleCancel"
               >
                 {{ options.cancelText ?? '取消' }}
               </button>
               <button
-                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors outline-none"
+                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 :class="
                   isDestructive
                     ? 'bg-destructive text-destructive-foreground hover:opacity-90'

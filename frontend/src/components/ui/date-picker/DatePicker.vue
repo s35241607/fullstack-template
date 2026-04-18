@@ -56,6 +56,7 @@ function parseFn(dateStr: string): Date {
 
 <template>
   <VueDatePicker
+    :id="id"
     :model-value="pickerValue"
     :dark="isDark"
     :disabled="disabled"

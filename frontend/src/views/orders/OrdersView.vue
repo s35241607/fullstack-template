@@ -183,41 +183,53 @@
       <div class="p-4 space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="space-y-1.5">
-            <Label>訂單編號 <span class="text-destructive">*</span></Label>
+            <Label for="new-order-number">訂單編號 <span class="text-destructive">*</span></Label>
             <Input
+              id="new-order-number"
               v-model="newOrderNumber"
+              name="order_number"
+              autocomplete="off"
               placeholder="例如 PO-2026-0001"
             />
           </div>
           <div class="space-y-1.5">
-            <Label>供應商名稱 <span class="text-destructive">*</span></Label>
+            <Label for="new-order-supplier-name">供應商名稱 <span class="text-destructive">*</span></Label>
             <Input
+              id="new-order-supplier-name"
               v-model="newSupplierName"
+              name="supplier_name"
+              autocomplete="organization"
               placeholder="供應商名稱"
             />
           </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="space-y-1.5">
-            <Label>供應商代碼</Label>
+            <Label for="new-order-supplier-code">供應商代碼</Label>
             <Input
+              id="new-order-supplier-code"
               v-model="newSupplierCode"
+              name="supplier_code"
+              autocomplete="off"
               placeholder="選填"
             />
           </div>
           <div class="space-y-1.5">
-            <Label>訂單日期 <span class="text-destructive">*</span></Label>
-            <DatePicker v-model="newOrderDate" placeholder="訂單日期" />
+            <Label for="new-order-date">訂單日期 <span class="text-destructive">*</span></Label>
+            <DatePicker id="new-order-date" v-model="newOrderDate" placeholder="訂單日期" />
           </div>
           <div class="space-y-1.5">
-            <Label>預期交貨日 <span class="text-destructive">*</span></Label>
-            <DatePicker v-model="newExpectedDate" placeholder="預期交貨日" />
+            <Label for="new-order-expected-date">預期交貨日 <span class="text-destructive">*</span></Label>
+            <DatePicker id="new-order-expected-date" v-model="newExpectedDate" placeholder="預期交貨日" />
           </div>
         </div>
         <div class="space-y-1.5">
-          <Label>備註</Label>
+          <Label for="new-order-notes">備註</Label>
           <Input
+            id="new-order-notes"
             v-model="newNotes"
+            name="notes"
+            autocomplete="off"
             placeholder="選填"
           />
         </div>
@@ -231,10 +243,10 @@
           <button
             :disabled="
               !newOrderNumber.trim() ||
-              !newSupplierName.trim() ||
-              !newOrderDate ||
-              !newExpectedDate ||
-              isCreating
+                !newSupplierName.trim() ||
+                !newOrderDate ||
+                !newExpectedDate ||
+                isCreating
             "
             class="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             @click="handleCreate"
@@ -329,6 +341,7 @@
                 <div class="flex items-center justify-end gap-1">
                   <button
                     class="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    :aria-label="`檢視 ${order.order_number} 詳情`"
                     title="檢視詳情"
                     @click="router.push({ name: 'order-detail', params: { id: order.id } })"
                   >
@@ -337,6 +350,7 @@
                   <button
                     v-if="order.status === 'OPEN'"
                     class="p-1.5 rounded-md text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                    :aria-label="`取消 ${order.order_number}`"
                     title="取消訂單"
                     :disabled="cancellingId === order.id"
                     @click="handleCancel(order.id, order.order_number)"
@@ -347,6 +361,7 @@
                   <button
                     v-if="order.status === 'OPEN' && order.items.length === 0"
                     class="p-1.5 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                    :aria-label="`刪除 ${order.order_number}`"
                     title="刪除"
                     :disabled="deletingId === order.id"
                     @click="handleDelete(order.id, order.order_number)"

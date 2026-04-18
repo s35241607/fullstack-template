@@ -7,6 +7,7 @@
   const holdCount = ref(0)
   const planCount = ref(0)
   const loading = ref(true)
+  const apiDocsUrl = import.meta.env.VITE_API_DOCS_URL || '/docs'
 
   onMounted(async () => {
     try {
@@ -52,7 +53,7 @@
       title: 'API 文件',
       desc: 'FastAPI 自動生成的 OpenAPI 文件',
       icon: Zap,
-      path: 'http://localhost:8000/docs',
+      path: apiDocsUrl,
       external: true,
       accent: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
     },
@@ -114,7 +115,7 @@
           v-for="m in modules"
           :key="m.title"
           v-bind="m.external ? { href: m.path, target: '_blank', rel: 'noopener' } : { to: m.path }"
-          class="group flex flex-col gap-3 rounded-lg border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-all"
+          class="group flex flex-col gap-3 rounded-lg border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-[border-color,box-shadow]"
         >
           <div
             class="flex items-center justify-center w-9 h-9 rounded-md transition-colors"

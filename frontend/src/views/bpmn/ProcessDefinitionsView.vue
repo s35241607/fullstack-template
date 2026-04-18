@@ -131,18 +131,24 @@ const statusBadge = (active: boolean) =>
       </div>
       <div class="p-5 space-y-3">
         <div>
-          <label class="block text-xs font-medium text-foreground mb-1.5">Name <span class="text-destructive">*</span></label>
+          <label for="new-process-name" class="block text-xs font-medium text-foreground mb-1.5">Name <span class="text-destructive">*</span></label>
           <input
+            id="new-process-name"
             v-model="newName"
             type="text"
+            name="name"
+            autocomplete="off"
             placeholder="e.g. Employee Onboarding"
             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow"
           />
         </div>
         <div>
-          <label class="block text-xs font-medium text-foreground mb-1.5">Description</label>
+          <label for="new-process-description" class="block text-xs font-medium text-foreground mb-1.5">Description</label>
           <textarea
+            id="new-process-description"
             v-model="newDescription"
+            name="description"
+            autocomplete="off"
             rows="2"
             placeholder="Describe what this process does…"
             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring transition-shadow resize-none"
@@ -290,10 +296,13 @@ const statusBadge = (active: boolean) =>
           </div>
           <div class="p-5 space-y-3">
             <div>
-              <label class="block text-xs font-medium text-foreground mb-1.5">Instance Name <span class="text-destructive">*</span></label>
+              <label for="start-instance-name" class="block text-xs font-medium text-foreground mb-1.5">Instance Name <span class="text-destructive">*</span></label>
               <input
+                id="start-instance-name"
                 v-model="startName"
                 type="text"
+                name="instance_name"
+                autocomplete="off"
                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 autofocus
               />
