@@ -74,8 +74,13 @@ const en = {
   },
 
   command: {
+    title: 'Global search',
+    description: 'Search pages and commands across the application.',
     placeholder: 'Search pages, commands (Ctrl+K)…',
     empty: 'No results found.',
+    select: 'Select',
+    go: 'Go',
+    close: 'Close',
   },
 
   common: {

@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-
+@plugin "tailwindcss-animate";
 @theme inline {
   --font-sans: 'Inter Variable', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 

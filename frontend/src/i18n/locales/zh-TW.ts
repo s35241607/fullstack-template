@@ -76,8 +76,13 @@ const zhTW: MessageSchema = {
   },
 
   command: {
+    title: '全域搜尋',
+    description: '搜尋此應用程式中的頁面與指令。',
     placeholder: '搜尋頁面、指令 (Ctrl+K)…',
     empty: '找不到符合的結果。',
+    select: '選擇',
+    go: '前往',
+    close: '關閉',
   },
 
   common: {
