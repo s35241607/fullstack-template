@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { ref, computed } from 'vue'
   import {
     Search,
     Sun,
@@ -10,6 +11,11 @@
     Palette,
     Globe,
   } from 'lucide-vue-next'
+  import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+  } from '@/components/ui/avatar'
   import { useTheme } from '@/composables/useTheme'
   import { useLocale, supportedLocales } from '@/composables/useLocale'
   import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
@@ -40,7 +46,6 @@
   } from '@/components/ui/tooltip'
 
   const {
-
     isDark,
     toggleDark,
     themes,
@@ -56,6 +61,11 @@
   const openCommandPalette = () => {
     window.dispatchEvent(new Event('app:command-open'))
   }
+
+  // User profile
+  const userAvatar = ref('https://avatars.githubusercontent.com/u/70700407?v=4&size=64')
+  const userName = ref('Admin')
+  const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 </script>
 
 <template>
@@ -249,12 +259,10 @@
                 <div>
                   <DropdownMenu>
                     <DropdownMenuTrigger as-child>
-                      <button
-                        aria-label="Open user menu"
-                        class="flex h-9 w-9 items-center justify-center rounded-full border-2 border-transparent overflow-hidden hover:border-accent shadow-sm hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
-                      >
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" class="h-full w-full object-cover" />
-                      </button>
+                      <Avatar class="h-9 w-9 border-2 border-transparent hover:border-accent shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer">
+                        <AvatarImage :src="userAvatar" alt="Avatar" />
+                        <AvatarFallback>{{ userInitial }}</AvatarFallback>
+                      </Avatar>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" class="border-border shadow-lg">
                       <DropdownMenuLabel>{{ $t('header.myAccount') }}</DropdownMenuLabel>
