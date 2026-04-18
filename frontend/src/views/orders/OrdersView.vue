@@ -15,12 +15,14 @@
   import { toast } from 'vue-sonner'
   import DatePicker from '@/components/ui/date-picker/DatePicker.vue'
   import { useConfirm } from '@/composables/useConfirm'
+  import { useI18n } from 'vue-i18n'
   import { Input } from '@/components/ui/input'
   import { Label } from '@/components/ui/label'
 
   const router = useRouter()
   const { orders, isLoading, error, createOrder, deleteOrder, cancelOrder, refresh } = useOrders()
   const { confirm } = useConfirm()
+  const { t } = useI18n()
 
   // Create form
   const showCreateForm = ref(false)
@@ -36,7 +38,7 @@
 
   function handleRefresh() {
     void refresh()
-    toast.info('正在重新整理…')
+    toast.info(t('toast.refreshing'))
   }
 
   async function handleCreate() {

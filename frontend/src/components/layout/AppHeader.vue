@@ -10,7 +10,6 @@
     Palette,
     Globe,
   } from 'lucide-vue-next'
-  import { useI18n } from 'vue-i18n'
   import { useTheme } from '@/composables/useTheme'
   import { useLocale, supportedLocales } from '@/composables/useLocale'
   import { useBreadcrumbs } from '@/composables/useBreadcrumbs'
@@ -40,8 +39,8 @@
     TooltipTrigger,
   } from '@/components/ui/tooltip'
 
-  const { t } = useI18n()
   const {
+
     isDark,
     toggleDark,
     themes,

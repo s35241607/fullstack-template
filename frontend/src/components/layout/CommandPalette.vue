@@ -36,19 +36,21 @@ interface NavItem {
 }
 
 // groupKey → translated group label, items have translated label/description
-const groupedPages = computed<Record<string, NavItem[]>>(() => {
-  return appNavGroups.reduce((acc, group) => {
+const groupedPages = computed<{ label: string; items: NavItem[] }[]>(() => {
+  return appNavGroups.map((group) => {
     const groupLabel = t(group.label)
-    acc[groupLabel] = group.items.map((item) => ({
-      id: item.id,
-      label: t(item.name),
-      description: t(item.description),
-      icon: item.icon,
-      route: item.path,
-      group: groupLabel,
-    }))
-    return acc
-  }, {} as Record<string, NavItem[]>)
+    return {
+      label: groupLabel,
+      items: group.items.map((item) => ({
+        id: item.id,
+        label: t(item.name),
+        description: t(item.description),
+        icon: item.icon,
+        route: item.path,
+        group: groupLabel,
+      })),
+    }
+  })
 })
 
 const handleSelect = (item: NavItem) => {
@@ -74,9 +76,9 @@ onUnmounted(() => {
     <CommandInput :placeholder="$t('command.placeholder')" />
     <CommandList>
       <CommandEmpty>{{ $t('command.empty') }}</CommandEmpty>
-      <CommandGroup v-for="(items, groupName) in groupedPages" :key="groupName" :heading="groupName">
+      <CommandGroup v-for="group in groupedPages" :key="group.label" :heading="group.label">
         <CommandItem
-          v-for="item in items"
+          v-for="item in group.items"
           :key="item.id"
           :value="item.label"
           @select="() => handleSelect(item)"

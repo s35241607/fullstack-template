@@ -121,7 +121,17 @@ const en = {
     settings: 'Settings',
     logout: 'Log out',
   },
-} as const
+
+  toast: {
+    refreshing: 'Refreshing…',
+    deleteSuccess: 'Deleted successfully',
+    cancelSuccess: 'Cancelled successfully',
+    createSuccess: 'Created successfully',
+    updateSuccess: 'Updated successfully',
+    error: 'Operation failed',
+    saveSuccess: 'Saved successfully',
+  },
+}
 
 export default en
 export type MessageSchema = typeof en

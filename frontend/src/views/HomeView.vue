@@ -1,10 +1,7 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
   import { ClipboardList, PauseCircle, ShoppingCart, FileText, Zap } from 'lucide-vue-next'
-  import { useI18n } from 'vue-i18n'
   import { ordersApi, procurementApi } from '@/services/api'
-
-  const { t } = useI18n()
 
   const orderCount = ref(0)
   const holdCount = ref(0)

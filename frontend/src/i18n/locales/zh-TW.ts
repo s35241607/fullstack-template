@@ -123,6 +123,15 @@ const zhTW: MessageSchema = {
     settings: '設定',
     logout: '登出',
   },
+  toast: {
+    refreshing: '正在重新整理…',
+    deleteSuccess: '已刪除',
+    cancelSuccess: '已取消',
+    createSuccess: '建立成功',
+    updateSuccess: '更新成功',
+    error: '操作失敗',
+    saveSuccess: '儲存成功',
+  },
 }
 
 export default zhTW

@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 
 @theme inline {
+  --font-sans: 'Inter Variable', 'Noto Sans TC', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-card: hsl(var(--card));
@@ -247,7 +249,7 @@
   body { 
     background-color: hsl(var(--background)); 
     color: hsl(var(--foreground)); 
-    font-family: 'Plus Jakarta Sans Variable', 'Noto Sans TC', sans-serif; 
+    font-family: 'Inter Variable', 'Noto Sans TC', sans-serif; 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;

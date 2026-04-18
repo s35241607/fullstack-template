@@ -68,9 +68,9 @@ size: {
 
 ## 6. 字體規範 (Typography)
 
-- **英文字體**：`Plus Jakarta Sans` — 現代幾何 SaaS UI 字體，支援 300–700 weight
+- **英文字體**：`Inter` — 經典的高品質數位 UI 字體，極致的可讀性
 - **中文字體**：`Noto Sans TC` — 繁體中文最佳選擇，fallback 於英文字體之後
-- **CSS 寫法固定**：`font-family: 'Plus Jakarta Sans Variable', 'Noto Sans TC', sans-serif;`
+- **CSS 寫法固定**：`font-family: 'Inter Variable', 'Noto Sans TC', sans-serif;`
 - **載入方式**：使用 `@fontsource` 本地化部署，確保在公司內網 (Intranet) 離線環境下字體仍能正常載入。在 `main.ts` 引入對應 CSS。
 - ❌ 禁止在 `index.html` 使用連結外部 CDN (如 Google Fonts)，確保 100% 離線可用。
 
