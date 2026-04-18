@@ -6,6 +6,7 @@
     PopoverContent,
     PopoverTrigger,
   } from '@/components/ui/popover'
+  import { Button } from '@/components/ui/button'
 
   const { notifications, unreadCount, isLoading, markRead, markAllRead } = useNotifications()
 
@@ -40,18 +41,15 @@
 <template>
   <Popover>
     <PopoverTrigger as-child>
-      <button
-        class="relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
-        aria-label="Notifications"
-      >
-        <Bell :size="18" />
+      <Button variant="ghost" size="icon-sm" class="relative" aria-label="Notifications">
+        <Bell class="h-4 w-4" />
         <span
           v-if="unreadCount > 0"
           class="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-semibold leading-none bg-destructive text-destructive-foreground rounded-full"
         >
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </span>
-      </button>
+      </Button>
     </PopoverTrigger>
 
     <PopoverContent
@@ -61,7 +59,7 @@
       class="w-80 p-0 overflow-hidden"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border">
         <h3 class="text-sm font-semibold text-foreground">{{ $t('header.notificationsTitle') }}</h3>
         <button
           v-if="unreadCount > 0"

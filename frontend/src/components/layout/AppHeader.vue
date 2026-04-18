@@ -141,20 +141,21 @@
                         <Globe class="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" class="w-40">
-                      <DropdownMenuLabel class="text-xs text-muted-foreground font-normal">
-                        {{ $t('header.langTooltip') }}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        v-for="loc in supportedLocales"
-                        :key="loc.value"
-                        class="cursor-pointer gap-2"
-                        @click="setLocale(loc.value)"
-                      >
-                        <Check class="h-3.5 w-3.5" :class="locale === loc.value ? 'opacity-100' : 'opacity-0'" />
-                        <span>{{ loc.label }}</span>
-                      </DropdownMenuItem>
+                    <DropdownMenuContent align="end" class="w-44 p-0 overflow-hidden">
+                      <div class="px-4 py-3 border-b border-border">
+                        <h4 class="text-sm font-semibold">{{ $t('header.langTooltip') }}</h4>
+                      </div>
+                      <div class="p-1">
+                        <DropdownMenuItem
+                          v-for="loc in supportedLocales"
+                          :key="loc.value"
+                          class="cursor-pointer gap-2"
+                          @click="setLocale(loc.value)"
+                        >
+                          <Check class="h-3.5 w-3.5" :class="locale === loc.value ? 'opacity-100' : 'opacity-0'" />
+                          <span>{{ loc.label }}</span>
+                        </DropdownMenuItem>
+                      </div>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -172,13 +173,15 @@
                         <Palette class="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" class="w-64 p-3 border-border shadow-lg">
-                      <div class="space-y-4">
-                        <div>
-                          <h4 class="text-sm font-semibold leading-none mb-1">{{ $t('theme.title') }}</h4>
-                          <p class="text-[11px] text-muted-foreground">{{ $t('theme.subtitle') }}</p>
-                        </div>
+                    <DropdownMenuContent align="end" class="w-64 p-0 border-border shadow-lg overflow-hidden">
+                      <!-- Panel Header -->
+                      <div class="px-4 py-3 border-b border-border">
+                        <h4 class="text-sm font-semibold leading-none">{{ $t('theme.title') }}</h4>
+                        <p class="text-[11px] text-muted-foreground mt-1">{{ $t('theme.subtitle') }}</p>
+                      </div>
 
+                      <!-- Panel Body -->
+                      <div class="p-3 space-y-4">
                         <!-- Primary Colors -->
                         <div class="space-y-2">
                           <p class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 px-1">{{ $t('theme.primaryColor') }}</p>
