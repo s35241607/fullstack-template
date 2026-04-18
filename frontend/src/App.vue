@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import AppLayout from '@/components/layout/AppLayout.vue'
   import AlertDialog from '@/components/ui/alert-dialog/AlertDialog.vue'
-  import { Toaster } from 'vue-sonner'
+  import { Toaster } from '@/components/ui/sonner'
   import { useDark } from '@vueuse/core'
   import { computed, watch } from 'vue'
 
@@ -27,9 +27,9 @@
     close-button
     :theme="toastTheme"
     :expand="false"
-    :duration="4000"
-    :visible-toasts="3"
-    :offset="16"
+    :duration="3000"
+    :visible-toasts="5"
+    :offset="20"
   />
 
   <!-- Global confirmation modal — driven by the useConfirm() singleton -->

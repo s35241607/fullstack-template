@@ -303,37 +303,6 @@
 }
 
 /* ══════════════════════════════════════════════════════
-   SONNER TOAST — Design System Integration
+   SONNER TOAST — Integrated via UI Component
    ══════════════════════════════════════════════════════ */
-
-/**
- * Rules:
- * 1. Font must match body (globalInjection won't help here — sonner renders outside Vue)
- * 2. Border-radius uses our --radius token so toasts match cards/buttons
- * 3. Default toast (non-rich) uses popover tokens so it works in light & dark
- * 4. Never override rich-colors — they are intentional (success/error/warning/info)
- */
-[data-sonner-toaster] {
-  font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif !important;
-}
-
-[data-sonner-toaster] [data-sonner-toast] {
-  border-radius: var(--radius) !important;
-}
-
-/* Default toast matches our popover/card design tokens */
-:root,
-:root[data-sonner-theme='light'] {
-  --normal-bg: hsl(var(--popover));
-  --normal-border: hsl(var(--border));
-  --normal-text: hsl(var(--popover-foreground));
-  --description-color: hsl(var(--muted-foreground));
-}
-
-.dark,
-.dark [data-sonner-theme='dark'] {
-  --normal-bg: hsl(var(--popover));
-  --normal-border: hsl(var(--border));
-  --normal-text: hsl(var(--popover-foreground));
-  --description-color: hsl(var(--muted-foreground));
-}
+/* Styles moved to components/ui/sonner/Sonner.vue */
