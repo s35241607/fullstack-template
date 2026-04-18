@@ -41,8 +41,9 @@
 <template>
   <Popover>
     <PopoverTrigger as-child>
+      <!-- Bell icon: 移除 h-4 w-4，Button icon-sm 基底 [&_svg]:size-4 已覆蓋 -->
       <Button variant="ghost" size="icon-sm" class="relative" aria-label="Notifications">
-        <Bell class="h-4 w-4" />
+        <Bell />
         <span
           v-if="unreadCount > 0"
           class="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-semibold leading-none bg-destructive text-destructive-foreground rounded-full"
@@ -56,19 +57,22 @@
       side="bottom"
       align="end"
       :side-offset="8"
-      class="w-80 p-0 overflow-hidden"
+      class="w-80 p-0 border-border shadow-lg overflow-hidden"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h3 class="text-sm font-semibold text-foreground">{{ $t('header.notificationsTitle') }}</h3>
-        <button
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+        <!-- text-foreground 移除：h3 預設即為 foreground 色 -->
+        <h3 class="text-sm font-semibold leading-none">{{ $t('header.notificationsTitle') }}</h3>
+        <!-- size="xs" 取代 size="sm" + class override -->
+        <Button
           v-if="unreadCount > 0"
-          class="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          variant="ghost"
+          size="xs"
           @click="markAllRead"
         >
-          <CheckCheck :size="14" />
+          <CheckCheck />
           {{ $t('header.markAllRead') }}
-        </button>
+        </Button>
       </div>
 
       <!-- Body -->
@@ -84,12 +88,12 @@
           <span class="text-sm">{{ $t('header.noNotifications') }}</span>
         </div>
 
-        <!-- List -->
+        <!-- List: raw button 無法用 shadcn 替換（特殊列表行為），但清除多餘 class -->
         <template v-else>
           <button
             v-for="n in notifications"
             :key="n.id"
-            class="flex items-start gap-3 w-full px-4 py-3 text-left hover:bg-accent/50 transition-colors border-b border-border/50 last:border-b-0 cursor-pointer"
+            class="flex items-start gap-3 w-full px-4 py-3 hover:bg-accent/50 transition-colors border-b border-border/50 last:border-b-0 cursor-pointer"
             :class="{ 'bg-accent/20': !n.is_read }"
             @click="!n.is_read && markRead(n.id)"
           >

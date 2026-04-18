@@ -32,7 +32,7 @@
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg" tooltip="MyApp" class="cursor-pointer" as-child>
+          <SidebarMenuButton size="lg" tooltip="MyApp" as-child>
             <RouterLink to="/">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground text-sm font-bold shadow-sm">
                 M

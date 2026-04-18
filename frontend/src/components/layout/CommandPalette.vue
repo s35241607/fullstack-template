@@ -83,7 +83,7 @@ onUnmounted(() => {
           :value="item.label"
           @select="() => handleSelect(item)"
         >
-          <component :is="item.icon" class="mr-2 h-4 w-4 text-muted-foreground" />
+          <component :is="item.icon" class="mr-2 text-muted-foreground" />
           <div class="flex flex-col">
             <span>{{ item.label }}</span>
             <span class="text-xs text-muted-foreground">{{ item.description }}</span>

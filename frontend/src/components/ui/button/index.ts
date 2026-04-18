@@ -14,9 +14,13 @@ export const buttonVariants = cva(
         // text-muted-foreground → text-foreground on hover, matching the manual button pattern used in NotificationPanel
         ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Header search bar facade — looks like an input, acts as a button
+        search: 'relative justify-start border border-input bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground',
       },
       size: {
         default: 'h-10 px-4 py-2',
+        // Compact inline button (e.g. "mark all read" in NotificationPanel)
+        xs: 'h-7 rounded-md px-2 text-xs',
         sm: 'h-9 rounded-md px-3',
         lg: 'h-11 rounded-md px-8',
         icon: 'h-10 w-10',
