@@ -14,9 +14,11 @@
   } from '@/components/ui/sidebar'
   import { Heart } from 'lucide-vue-next'
   import { useRoute } from 'vue-router'
+  import { useI18n } from 'vue-i18n'
   import { appNavGroups } from '@/config/navigation'
 
   const route = useRoute()
+  const { t } = useI18n()
 
   const isItemActive = (path: string) => {
     if (path === '/') return route.path === '/'
@@ -37,7 +39,7 @@
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">MyApp</span>
-                <span class="truncate text-xs">Enterprise Platform</span>
+                <span class="truncate text-xs">{{ $t('sidebar.appSubtitle') }}</span>
               </div>
             </RouterLink>
           </SidebarMenuButton>
@@ -47,14 +49,18 @@
 
     <SidebarContent>
       <SidebarGroup v-for="group in appNavGroups" :key="group.id">
-        <SidebarGroupLabel>{{ group.label }}</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ t(group.label) }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in group.items" :key="item.path">
-              <SidebarMenuButton as-child :is-active="isItemActive(item.path)" :tooltip="item.name">
-                <RouterLink :to="item.path" :title="item.name">
+              <SidebarMenuButton
+                as-child
+                :is-active="isItemActive(item.path)"
+                :tooltip="t(item.name)"
+              >
+                <RouterLink :to="item.path" :title="t(item.name)">
                   <component :is="item.icon" />
-                  <span>{{ item.name }}</span>
+                  <span>{{ t(item.name) }}</span>
                 </RouterLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -67,10 +73,10 @@
     <SidebarFooter class="p-4 border-t border-sidebar-border/50">
       <!-- Full Copyright (Visible when expanded) -->
       <div class="group-data-[collapsible=icon]:hidden flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground font-medium leading-tight">
-        <span>© 2026 Lan Side Project</span>
+        <span>{{ $t('sidebar.copyright') }}</span>
         <Heart :size="10" class="text-rose-500 fill-rose-500" />
       </div>
-      
+
       <!-- Minimalist Copyright (Visible when collapsed) -->
       <div class="hidden group-data-[collapsible=icon]:flex items-center justify-center font-bold text-xs text-muted-foreground">
         ©

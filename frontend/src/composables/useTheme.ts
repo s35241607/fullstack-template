@@ -13,12 +13,12 @@ export interface ThemeConfig {
 }
 
 export const themes: ThemeConfig[] = [
-  { id: 'zinc', label: 'Zinc', color: '#18181b' },
-  { id: 'blue', label: 'Blue', color: '#3b82f6' },
-  { id: 'violet', label: 'Violet', color: '#8b5cf6' },
-  { id: 'rose', label: 'Rose', color: '#f43f5e' },
-  { id: 'orange', label: 'Orange', color: '#f97316' },
-  { id: 'green', label: 'Green', color: '#22c55e' },
+  { id: 'zinc',   label: 'Zinc',   color: '#18181b' }, // hsl(240 5.9% 10%)
+  { id: 'blue',   label: 'Blue',   color: '#2563eb' }, // hsl(221.2 83.2% 53.3%)
+  { id: 'violet', label: 'Violet', color: '#7c3aed' }, // hsl(262.1 83.3% 57.8%)
+  { id: 'rose',   label: 'Rose',   color: '#e11d48' }, // hsl(346.8 77.2% 49.8%)
+  { id: 'orange', label: 'Orange', color: '#b8450a' }, // hsl(20.5 90% 38%)
+  { id: 'green',  label: 'Green',  color: '#16a34a' }, // hsl(142.1 76.2% 36.3%)
 ]
 
 export const surfaces = [

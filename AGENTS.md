@@ -64,3 +64,38 @@ size: {
 - 這是某個頁面的**一次性**視覺需求嗎？→ 才可以加 inline class
 - 是「全域通用」的行為（如 cursor-pointer）？→ 寫進 `style.css` 的 `@layer base`
 
+---
+
+## 6. 字體規範 (Typography)
+
+- **英文字體**：`Plus Jakarta Sans` — 現代幾何 SaaS UI 字體，支援 300–700 weight
+- **中文字體**：`Noto Sans TC` — 繁體中文最佳選擇，fallback 於英文字體之後
+- **CSS 寫法固定**：`font-family: 'Plus Jakarta Sans', 'Noto Sans TC', sans-serif;`
+- **載入方式**：在 `index.html` 使用 Google Fonts preconnect + `display=swap`
+- ❌ 不要手動加 `font-family` inline，確保 `style.css` 的 `body` 定義就夠了
+
+---
+
+## 7. 國際化 (i18n) 規範
+
+- **套件**：`vue-i18n@11`（Composition API 模式）
+- **配置位置**：`src/i18n/index.ts`，在 `main.ts` 以 `app.use(i18n)` 掛載（必須在 router **之前**）
+- **Locale 檔案**：`src/i18n/locales/en.ts`（型別基準）、`src/i18n/locales/zh-TW.ts`（實作 `MessageSchema`）
+- **語言切換**：透過 `src/composables/useLocale.ts` 的 `setLocale()`，儲存至 localStorage，並同步 `document.documentElement.lang`
+- **Navigation config** (`src/config/navigation.ts`): `label`、`name`、`description` 欄位存 **i18n key**（如 `'nav.items.home'`），不存顯示文字，所有使用端需呼叫 `t()` 或 `$t()`
+- **Router breadcrumb**: `meta.breadcrumb` 存 i18n key，`useBreadcrumbs.ts` 內部呼叫 `t()` 翻譯
+- **globalInjection: true** — 讓 `$t()` 在所有 template 中直接可用，不需每個組件都 `useI18n()`
+- ❌ 禁止在 config/navigation.ts 直接放中文或英文顯示文字
+
+---
+
+## 8. Toast 規範 (vue-sonner)
+
+- **套件**：`vue-sonner`（已安裝，勿更換）
+- **掛載位置**：`src/App.vue` 的 `<Toaster>` 組件，已完整配置（含 dark mode 同步、rich-colors、close-button）
+- **使用方式**：在任何 component 中直接 `import { toast } from 'vue-sonner'` 呼叫
+- **CSS 整合**：已在 `src/style.css` 尾部加入設計系統 token 覆寫（字體、圓角、背景色）
+  - `rich-colors` 的顏色為 Sonner 官方設計，**不要覆寫**
+  - 預設（非 rich）toast 使用 `--popover` 系列 token，與 Card/Dropdown 一致
+- ❌ 禁止使用 `alert()`、自行封裝 toast div 或引入其他 notification 套件
+- ❌ 不要在 Sonner toast 的 CSS 覆寫中動到 `--success-bg`、`--error-bg` 等 rich color 變數

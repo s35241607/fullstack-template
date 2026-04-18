@@ -13,14 +13,17 @@ import {
 
 export interface AppNavItem {
   id: string
+  /** i18n key — pass to $t() or t() in templates */
   name: string
   path: string
   icon: LucideIcon
+  /** i18n key — pass to $t() or t() in templates */
   description: string
 }
 
 export interface AppNavGroup {
   id: string
+  /** i18n key — pass to $t() or t() in templates */
   label: string
   items: AppNavItem[]
 }
@@ -28,94 +31,94 @@ export interface AppNavGroup {
 export const appNavGroups: AppNavGroup[] = [
   {
     id: 'main',
-    label: 'Main',
+    label: 'nav.groups.main',
     items: [
       {
         id: 'home',
-        name: 'Dashboard',
+        name: 'nav.items.home',
         path: '/',
         icon: LayoutDashboard,
-        description: '首頁總覽',
+        description: 'nav.desc.home',
       },
       {
         id: 'items',
-        name: 'Items',
+        name: 'nav.items.items',
         path: '/items',
         icon: Package,
-        description: '管理品項清單',
+        description: 'nav.desc.items',
       },
     ],
   },
   {
     id: 'workflow',
-    label: 'Workflow',
+    label: 'nav.groups.workflow',
     items: [
       {
         id: 'bpmn-definitions',
-        name: 'Processes',
+        name: 'nav.items.bpmnDefinitions',
         path: '/bpmn/definitions',
         icon: Workflow,
-        description: '流程定義管理',
+        description: 'nav.desc.bpmnDefinitions',
       },
       {
         id: 'bpmn-instances',
-        name: 'Instances',
+        name: 'nav.items.bpmnInstances',
         path: '/bpmn/instances',
         icon: GitFork,
-        description: '流程執行中實例',
+        description: 'nav.desc.bpmnInstances',
       },
       {
         id: 'bpmn-tasks',
-        name: 'My Tasks',
+        name: 'nav.items.bpmnTasks',
         path: '/bpmn/tasks',
         icon: ListTodo,
-        description: '我的待辦任務',
+        description: 'nav.desc.bpmnTasks',
       },
     ],
   },
   {
     id: 'procurement',
-    label: '採購管理',
+    label: 'nav.groups.procurement',
     items: [
       {
         id: 'procurement-plans',
-        name: '採購計畫',
+        name: 'nav.items.procurementPlans',
         path: '/procurement/plans',
         icon: ShoppingCart,
-        description: '管理與送審採購計畫',
+        description: 'nav.desc.procurementPlans',
       },
     ],
   },
   {
     id: 'orders',
-    label: '訂單管理',
+    label: 'nav.groups.orders',
     items: [
       {
         id: 'orders',
-        name: '訂單列表',
+        name: 'nav.items.orders',
         path: '/orders',
         icon: ClipboardList,
-        description: '管理採購訂單',
+        description: 'nav.desc.orders',
       },
       {
         id: 'hold-summary',
-        name: 'On-Hold 總覽',
+        name: 'nav.items.holdSummary',
         path: '/orders/holds',
         icon: PauseCircle,
-        description: '查看 On-Hold 訂單彙整',
+        description: 'nav.desc.holdSummary',
       },
     ],
   },
   {
     id: 'system',
-    label: 'System',
+    label: 'nav.groups.system',
     items: [
       {
         id: 'about',
-        name: 'About',
+        name: 'nav.items.about',
         path: '/about',
         icon: Info,
-        description: '關於此系統',
+        description: 'nav.desc.about',
       },
     ],
   },

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { onKeyStroke } from '@vueuse/core'
 
 import {
@@ -14,6 +15,7 @@ import {
 import { appNavGroups } from '@/config/navigation'
 
 const router = useRouter()
+const { t } = useI18n()
 const isOpen = ref(false)
 
 // ── Global Ctrl+K Shortcut ──────────────────────────────────────────
@@ -33,15 +35,17 @@ interface NavItem {
   group: string
 }
 
+// groupKey → translated group label, items have translated label/description
 const groupedPages = computed<Record<string, NavItem[]>>(() => {
   return appNavGroups.reduce((acc, group) => {
-    acc[group.label] = group.items.map((item) => ({
+    const groupLabel = t(group.label)
+    acc[groupLabel] = group.items.map((item) => ({
       id: item.id,
-      label: item.name,
-      description: item.description,
+      label: t(item.name),
+      description: t(item.description),
       icon: item.icon,
       route: item.path,
-      group: group.label,
+      group: groupLabel,
     }))
     return acc
   }, {} as Record<string, NavItem[]>)
@@ -67,9 +71,9 @@ onUnmounted(() => {
 
 <template>
   <CommandDialog v-model:open="isOpen">
-    <CommandInput placeholder="搜尋頁面、指令 (支援 Ctrl+K)..." />
+    <CommandInput :placeholder="$t('command.placeholder')" />
     <CommandList>
-      <CommandEmpty>找不到符合的結果。</CommandEmpty>
+      <CommandEmpty>{{ $t('command.empty') }}</CommandEmpty>
       <CommandGroup v-for="(items, groupName) in groupedPages" :key="groupName" :heading="groupName">
         <CommandItem
           v-for="item in items"

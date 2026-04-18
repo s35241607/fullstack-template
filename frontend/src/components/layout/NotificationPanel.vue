@@ -62,14 +62,14 @@
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-        <h3 class="text-sm font-semibold text-foreground">通知</h3>
+        <h3 class="text-sm font-semibold text-foreground">{{ $t('header.notificationsTitle') }}</h3>
         <button
           v-if="unreadCount > 0"
           class="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           @click="markAllRead"
         >
           <CheckCheck :size="14" />
-          全部已讀
+          {{ $t('header.markAllRead') }}
         </button>
       </div>
 
@@ -77,13 +77,13 @@
       <div class="overflow-y-auto max-h-[340px]">
         <!-- Loading -->
         <div v-if="isLoading" class="flex items-center justify-center py-8 text-sm text-muted-foreground">
-          載入中…
+          {{ $t('common.loading') }}
         </div>
 
         <!-- Empty -->
         <div v-else-if="notifications.length === 0" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
           <Bell :size="28" class="mb-2 opacity-40" />
-          <span class="text-sm">目前沒有通知</span>
+          <span class="text-sm">{{ $t('header.noNotifications') }}</span>
         </div>
 
         <!-- List -->

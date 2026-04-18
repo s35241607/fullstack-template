@@ -1,7 +1,10 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
   import { ClipboardList, PauseCircle, ShoppingCart, FileText, Zap } from 'lucide-vue-next'
+  import { useI18n } from 'vue-i18n'
   import { ordersApi, procurementApi } from '@/services/api'
+
+  const { t } = useI18n()
 
   const orderCount = ref(0)
   const holdCount = ref(0)
@@ -29,29 +32,25 @@
 
   const modules = [
     {
-      title: '訂單管理',
-      desc: '查看所有採購訂單、品項明細、收貨紀錄與交期追蹤',
+      key: 'orders',
       icon: ClipboardList,
       path: '/orders',
       accent: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
     },
     {
-      title: 'On-Hold 總覽',
-      desc: '依機型彙總 Hold 數量，快速掌握暫扣狀況',
+      key: 'holds',
       icon: PauseCircle,
       path: '/orders/holds',
       accent: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
     },
     {
-      title: '採購計畫',
-      desc: '建立與管理採購計畫，支援完整審核流程',
+      key: 'procurement',
       icon: ShoppingCart,
       path: '/procurement',
       accent: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     },
     {
-      title: 'API 文件',
-      desc: 'FastAPI 自動生成的 OpenAPI 文件',
+      key: 'api',
       icon: Zap,
       path: apiDocsUrl,
       external: true,
@@ -71,8 +70,8 @@
           <FileText :size="24" />
         </div>
         <div>
-          <h1 class="text-2xl font-bold text-foreground tracking-tight">企業採購管理系統</h1>
-          <p class="text-muted-foreground mt-1">訂單追蹤 · On-Hold 管理 · 採購計畫審核</p>
+          <h1 class="text-2xl font-bold text-foreground tracking-tight">{{ $t('home.title') }}</h1>
+          <p class="text-muted-foreground mt-1">{{ $t('home.subtitle') }}</p>
         </div>
       </div>
     </div>
@@ -80,7 +79,7 @@
     <!-- Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="rounded-lg border border-border bg-card p-5">
-        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">進行中訂單</p>
+        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('home.stats.orders') }}</p>
         <p class="text-3xl font-bold text-foreground mt-2">
           <span v-if="loading" class="text-muted-foreground">—</span>
           <span v-else>{{ orderCount }}</span>
@@ -88,7 +87,7 @@
       </div>
       <div class="rounded-lg border border-border bg-card p-5">
         <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Hold 暫扣總量
+          {{ $t('home.stats.holds') }}
         </p>
         <p class="text-3xl font-bold text-foreground mt-2">
           <span v-if="loading" class="text-muted-foreground">—</span>
@@ -96,7 +95,7 @@
         </p>
       </div>
       <div class="rounded-lg border border-border bg-card p-5">
-        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">採購計畫</p>
+        <p class="text-xs font-medium text-muted-foreground uppercase tracking-wider">{{ $t('home.stats.plans') }}</p>
         <p class="text-3xl font-bold text-foreground mt-2">
           <span v-if="loading" class="text-muted-foreground">—</span>
           <span v-else>{{ planCount }}</span>
@@ -107,13 +106,13 @@
     <!-- Module cards -->
     <div>
       <h2 class="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
-        功能模組
+        {{ $t('home.modules') }}
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <component
           :is="m.external ? 'a' : 'RouterLink'"
           v-for="m in modules"
-          :key="m.title"
+          :key="m.key"
           v-bind="m.external ? { href: m.path, target: '_blank', rel: 'noopener' } : { to: m.path }"
           class="group flex flex-col gap-3 rounded-lg border border-border bg-card p-4 hover:border-primary/30 hover:shadow-sm transition-[border-color,box-shadow]"
         >
@@ -127,10 +126,10 @@
             <p
               class="font-medium text-foreground text-sm group-hover:text-primary transition-colors"
             >
-              {{ m.title }}
+              {{ $t(`home.moduleCards.${m.key}.title`) }}
             </p>
             <p class="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              {{ m.desc }}
+              {{ $t(`home.moduleCards.${m.key}.desc`) }}
             </p>
           </div>
         </component>
