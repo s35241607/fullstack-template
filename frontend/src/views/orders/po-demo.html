@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -40,76 +41,170 @@
     </script>
 
     <style>
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: #191919; border-left: 1px solid #2F3336; border-top: 1px solid #2F3336; }
-        ::-webkit-scrollbar-thumb { background: #474C50; border-radius: 5px; border: 2px solid #191919; }
-        ::-webkit-scrollbar-thumb:hover { background: #5C6266; }
+        /* 全局捲軸 */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
 
-        body { background-color: #191919; color: #D4D4D4; color-scheme: dark; overflow: hidden; }
+        ::-webkit-scrollbar-track {
+            background: #191919;
+            border-left: 1px solid #2F3336;
+            border-top: 1px solid #2F3336;
+        }
 
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        ::-webkit-scrollbar-thumb {
+            background: #474C50;
+            border-radius: 5px;
+            border: 2px solid #191919;
+        }
 
-        .slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translate(-50%, 20px); }
-        .dropdown-enter-active, .dropdown-leave-active { transition: all 0.15s ease; }
-        .dropdown-enter-from, .dropdown-leave-to { opacity: 0; transform: translateY(-5px); }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5C6266;
+        }
+
+        /* 日曆內部微型捲軸 */
+        .calendar-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .calendar-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+            border: none;
+        }
+
+        .calendar-scrollbar::-webkit-scrollbar-thumb {
+            background: #474C50;
+            border-radius: 2px;
+            border: none;
+        }
+
+        body {
+            background-color: #191919;
+            color: #D4D4D4;
+            color-scheme: dark;
+            overflow: hidden;
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .slide-up-enter-active,
+        .slide-up-leave-active {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-up-enter-from,
+        .slide-up-leave-to {
+            opacity: 0;
+            transform: translate(-50%, 20px);
+        }
+
+        .dropdown-enter-active,
+        .dropdown-leave-active {
+            transition: all 0.15s ease;
+        }
+
+        .dropdown-enter-from,
+        .dropdown-leave-to {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
 
         /* ==========================================================================
            🌟 修復重疊破圖的核心：嚴謹的 Table Sticky CSS 結構
            ========================================================================== */
-        table { 
-            border-collapse: separate; 
-            border-spacing: 0; 
-            min-width: 1400px; 
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 1400px;
             width: 100%;
         }
 
-        th, td { padding: 0; border: none; }
-        
-        /* 1. Header 列：鎖定 Top */
-        th { 
-            position: sticky; 
-            top: 0; 
-            z-index: 20; 
-            background-color: #191919; 
-            border-bottom: 1px solid #2F3336; 
+        th,
+        td {
+            padding: 0;
+            border: none;
         }
 
-        /* 2. 第一欄：Checkbox (鎖定 Left) */
-        .sticky-col-1 { 
-            position: sticky; 
-            left: 0; 
-            width: 48px; min-width: 48px; max-width: 48px; 
-            z-index: 10; 
-            background-color: inherit; 
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background-color: #191919;
+            border-bottom: 1px solid #2F3336;
         }
-        th.sticky-col-1 { z-index: 30; background-color: #191919; }
 
-        /* 3. 第二欄：訂單號/明細號 (鎖定 Left) */
-        .sticky-col-2 { 
-            position: sticky; 
-            left: 48px; 
-            width: 280px; min-width: 280px; max-width: 280px; 
-            z-index: 10; 
-            background-color: inherit; 
-            border-right: 1px solid #2F3336; 
+        .sticky-col-checkbox {
+            position: sticky;
+            left: 0;
+            width: 48px;
+            min-width: 48px;
+            max-width: 48px;
+            z-index: 10;
+            background-color: inherit;
         }
-        th.sticky-col-2 { z-index: 30; background-color: #191919; }
 
-        /* 4. 行列 Hover 的背景色繼承邏輯 */
-        tbody tr { background-color: #191919; transition: background-color 0.15s ease; }
-        tbody tr:hover { background-color: #252525; }
-        tbody tr.table-row-selected { background-color: #252525; }
-        tbody tr.table-row-expanded { background-color: #1A1A1A; }
-        
-        tbody tr.group-header { background-color: #222222; }
-        tbody tr.group-header:hover { background-color: #2A2A2A; }
+        th.sticky-col-checkbox {
+            z-index: 30;
+            background-color: #191919;
+        }
 
-        /* 儲存格底線 */
-        tbody td { border-bottom: 1px solid #2F3336; }
+        .sticky-col-orderInfo {
+            position: sticky;
+            left: 48px;
+            width: 280px;
+            min-width: 280px;
+            max-width: 280px;
+            z-index: 10;
+            background-color: inherit;
+            border-right: 1px solid #2F3336;
+        }
+
+        th.sticky-col-orderInfo {
+            z-index: 30;
+            background-color: #191919;
+        }
+
+        tbody tr {
+            background-color: #191919;
+            transition: background-color 0.15s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #252525;
+        }
+
+        tbody tr.table-row-selected {
+            background-color: #252525;
+        }
+
+        tbody tr.table-row-expanded {
+            background-color: #1A1A1A;
+        }
+
+        tbody tr.group-header {
+            background-color: #222222;
+        }
+
+        tbody tr.group-header:hover {
+            background-color: #2A2A2A;
+        }
+
+        tbody td {
+            border-bottom: 1px solid #2F3336;
+        }
+
+        .drag-over {
+            border-top: 2px solid #2383E2;
+            background-color: rgba(35, 131, 226, 0.1);
+        }
     </style>
 </head>
+
 <body class="antialiased h-screen flex flex-col p-6">
     <div id="app" class="max-w-[1800px] w-full mx-auto flex flex-col h-full relative">
         <!-- Header 區塊 -->
@@ -117,59 +212,118 @@
             <div class="flex items-center gap-2 mb-4">
                 <i data-lucide="truck" class="w-6 h-6 text-notion-text"></i>
                 <h2 class="text-xl font-semibold text-white">ERP 訂單交期管理</h2>
-                <span class="text-notion-muted text-sm font-normal ml-2 bg-[#2C2C2C] px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span
+                    class="text-notion-muted text-sm font-normal ml-2 bg-[#2C2C2C] px-2 py-0.5 rounded-full flex items-center gap-1">
                     {{ processedOrders.length }} 筆明細
-                    <span v-if="processedOrders.length !== orders.length" class="text-[10px] opacity-60 bg-[#191919] px-1 rounded">總共 {{ orders.length }}</span>
+                    <span v-if="processedOrders.length !== orders.length"
+                        class="text-[10px] opacity-60 bg-[#191919] px-1 rounded">總共 {{ orders.length }}</span>
                 </span>
             </div>
 
             <!-- Tabs & Filters -->
             <div class="flex items-center justify-between border-b border-notion-border pb-2">
+                <!-- 🌟 視圖切換 (View Toggle) -->
                 <div class="flex items-center gap-1 text-sm text-notion-muted">
-                    <button class="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-notion-hover bg-notion-hover text-notion-text transition-colors">
+                    <button @click="currentView = 'table'"
+                        class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors"
+                        :class="currentView === 'table' ? 'bg-notion-hover text-notion-text' : 'hover:bg-notion-hover'">
                         <i data-lucide="table" class="w-4 h-4"></i> 列表檢視
                     </button>
-                    <button class="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-notion-hover transition-colors">
+                    <button @click="currentView = 'calendar'"
+                        class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors"
+                        :class="currentView === 'calendar' ? 'bg-notion-hover text-notion-text' : 'hover:bg-notion-hover'">
                         <i data-lucide="calendar" class="w-4 h-4"></i> 交期行事曆
                     </button>
                 </div>
-                
+
                 <div class="flex items-center gap-2 text-notion-muted">
-                    <div class="relative flex items-center bg-[#252525] rounded-md px-2 py-1 border border-transparent focus-within:border-notion-border focus-within:bg-[#1A1A1A] transition-colors">
+                    <div
+                        class="relative flex items-center bg-[#252525] rounded-md px-2 py-1 border border-transparent focus-within:border-notion-border focus-within:bg-[#1A1A1A] transition-colors">
                         <i data-lucide="search" class="w-4 h-4 text-notion-muted"></i>
-                        <input type="text" v-model="searchQuery" placeholder="搜尋訂單、產品..." class="bg-transparent border-none outline-none text-sm text-notion-text w-48 ml-2 placeholder-notion-muted">
-                        <button v-if="searchQuery" @click="searchQuery = ''" class="text-notion-muted hover:text-white ml-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                        <input type="text" v-model="searchQuery" placeholder="搜尋訂單、產品..."
+                            class="bg-transparent border-none outline-none text-sm text-notion-text w-48 ml-2 placeholder-notion-muted">
+                        <button v-if="searchQuery" @click="searchQuery = ''"
+                            class="text-notion-muted hover:text-white ml-1"><i data-lucide="x"
+                                class="w-3 h-3"></i></button>
+                    </div>
+
+                    <!-- 欄位設定按鈕 (僅在列表視圖顯示) -->
+                    <div v-if="currentView === 'table'" class="relative" ref="columnSettingsWrapper">
+                        <button @click="showColumnSettings = !showColumnSettings"
+                            class="p-1.5 rounded hover:bg-notion-hover text-notion-muted transition-colors"
+                            title="欄位設定 (可拖曳排序)">
+                            <i data-lucide="settings" class="w-4 h-4"></i>
+                        </button>
+                        <transition name="dropdown">
+                            <div v-if="showColumnSettings"
+                                class="absolute right-0 mt-1 w-64 bg-[#252525] border border-notion-border rounded-lg shadow-xl z-50 py-1">
+                                <div
+                                    class="px-3 py-2 text-xs font-semibold text-notion-muted border-b border-notion-border flex justify-between items-center">
+                                    <span>顯示欄位設定</span>
+                                    <span class="text-[10px] font-normal opacity-70">拖曳可排序</span>
+                                </div>
+                                <div class="max-h-[350px] overflow-y-auto pt-1">
+                                    <div class="px-3 py-1.5 flex items-center justify-between opacity-50 bg-[#1A1A1A]">
+                                        <div class="flex items-center gap-2">
+                                            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                                            <span class="text-sm">訂單號 / 明細號</span>
+                                        </div>
+                                        <span class="text-xs">固定</span>
+                                    </div>
+                                    <div v-for="(col, index) in dynamicColumns" :key="col.id" draggable="true"
+                                        @dragstart="onDragStart(index)" @dragover.prevent="onDragOver($event, index)"
+                                        @dragleave="onDragLeave" @drop="onDrop(index)"
+                                        class="flex items-center justify-between px-3 py-2 hover:bg-notion-hover cursor-grab active:cursor-grabbing border-b border-transparent transition-colors"
+                                        :class="{'drag-over': dragOverIndex === index}">
+                                        <div class="flex items-center gap-2 pointer-events-none">
+                                            <i data-lucide="grip-vertical" class="w-3.5 h-3.5 text-notion-muted"></i>
+                                            <span class="text-sm text-notion-text">{{ col.label }}</span>
+                                        </div>
+                                        <input type="checkbox" v-model="col.visible"
+                                            class="rounded border border-notion-border bg-[#191919] text-notion-blue focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer">
+                                    </div>
+                                </div>
+                            </div>
+                        </transition>
                     </div>
                 </div>
             </div>
 
-            <!-- Filters & Grouping Bar -->
-            <div class="flex items-center gap-3 mt-4 text-sm relative h-8">
-                <!-- Group By Toggle -->
+            <!-- Filters & Grouping Bar (僅列表視圖需要) -->
+            <div v-if="currentView === 'table'" class="flex items-center gap-3 mt-4 text-sm relative h-8">
                 <div class="relative" ref="groupDropdownWrapper">
-                    <button @click="showGroupMenu = !showGroupMenu" class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors" :class="groupBy !== 'none' ? 'text-notion-blue bg-notion-blue/10 hover:bg-notion-blue/20' : 'hover:bg-notion-hover'">
-                        <i data-lucide="layers" class="w-4 h-4"></i> 
+                    <button @click="showGroupMenu = !showGroupMenu"
+                        class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors"
+                        :class="groupBy !== 'none' ? 'text-notion-blue bg-notion-blue/10 hover:bg-notion-blue/20' : 'hover:bg-notion-hover'">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
                         {{ groupOptions.find(o => o.value === groupBy)?.label || '無分組' }}
                         <i data-lucide="chevron-down" class="w-3 h-3 opacity-70"></i>
                     </button>
                     <transition name="dropdown">
-                        <div v-if="showGroupMenu" class="absolute left-0 mt-1 w-48 bg-[#252525] border border-notion-border rounded-lg shadow-xl z-50 py-1">
-                            <div class="px-3 py-1.5 text-xs font-semibold text-notion-muted uppercase tracking-wider">分組依據</div>
-                            <button v-for="opt in groupOptions" :key="opt.value" @click="setGroupBy(opt.value)" class="w-full text-left px-3 py-1.5 text-sm hover:bg-notion-hover flex items-center justify-between text-notion-text">
+                        <div v-if="showGroupMenu"
+                            class="absolute left-0 mt-1 w-48 bg-[#252525] border border-notion-border rounded-lg shadow-xl z-50 py-1">
+                            <div class="px-3 py-1.5 text-xs font-semibold text-notion-muted uppercase tracking-wider">
+                                分組依據</div>
+                            <button v-for="opt in groupOptions" :key="opt.value" @click="setGroupBy(opt.value)"
+                                class="w-full text-left px-3 py-1.5 text-sm hover:bg-notion-hover flex items-center justify-between text-notion-text">
                                 {{ opt.label }}
-                                <i v-if="groupBy === opt.value" data-lucide="check" class="w-3.5 h-3.5 text-notion-blue"></i>
+                                <i v-if="groupBy === opt.value" data-lucide="check"
+                                    class="w-3.5 h-3.5 text-notion-blue"></i>
                             </button>
                         </div>
                     </transition>
                 </div>
 
-                <!-- 🌟 批次收合/展開控制列 -->
                 <div class="flex items-center gap-1 border-l border-notion-border pl-3">
-                    <button v-if="groupBy !== 'none'" @click="toggleAllGroups" class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-notion-muted hover:bg-notion-hover hover:text-white" title="收合/展開外層群組">
+                    <button v-if="groupBy !== 'none'" @click="toggleAllGroups"
+                        class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-notion-muted hover:bg-notion-hover hover:text-white"
+                        title="收合/展開外層群組">
                         <i data-lucide="folders" class="w-3.5 h-3.5"></i>
                         {{ isAllGroupsCollapsed ? '展開群組' : '收合群組' }}
                     </button>
-                    <button @click="toggleAllDetails" class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-notion-muted hover:bg-notion-hover hover:text-white" title="一次性收合/展開所有子表格明細">
+                    <button @click="toggleAllDetails"
+                        class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-notion-muted hover:bg-notion-hover hover:text-white"
+                        title="一次性收合/展開所有子表格明細">
                         <i data-lucide="list-tree" class="w-3.5 h-3.5"></i>
                         {{ isAllDetailsCollapsed ? '展開明細' : '收合明細' }}
                     </button>
@@ -177,50 +331,74 @@
             </div>
         </header>
 
-        <!-- Main Table Container (Virtual Scroller) -->
-        <div class="flex-1 overflow-auto border border-notion-border rounded-lg relative bg-[#191919]" @scroll="handleScroll">
+        <!-- =========================================================
+             🌟 視圖 1: 列表視圖 (Table View - Virtual Scroller)
+             ========================================================= -->
+        <div v-if="currentView === 'table'"
+            class="flex-1 overflow-auto border border-notion-border rounded-lg relative bg-[#191919]"
+            @scroll="handleScroll">
             <table>
                 <!-- Table Header -->
                 <thead>
                     <tr class="text-sm text-notion-muted">
-                        <th class="py-2.5 px-3 font-normal sticky-col-1 text-center">
-                            <input type="checkbox" :checked="isAllSelected" :indeterminate.prop="isIndeterminate" @change="toggleSelectAll" class="rounded border border-notion-border bg-[#191919] text-notion-blue focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer">
+                        <!-- 固定欄位 Header -->
+                        <th class="py-2.5 px-3 font-normal sticky-col-checkbox text-center">
+                            <input type="checkbox" :checked="isAllSelected" :indeterminate.prop="isIndeterminate"
+                                @change="toggleSelectAll"
+                                class="rounded border border-notion-border bg-[#191919] text-notion-blue focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer">
                         </th>
-                        <th class="py-2.5 px-3 font-normal sticky-col-2">
-                            <div class="flex items-center gap-1.5"><span class="font-serif italic text-xs">Aa</span> 訂單號 / 明細號</div>
+                        <th class="py-2.5 px-3 font-normal sticky-col-orderInfo text-left">
+                            <div class="flex items-center gap-1.5"><span class="font-serif italic text-xs">Aa</span> 訂單號
+                                / 明細號</div>
                         </th>
-                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[150px]">供應商</th>
-                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[120px]">訂單日期</th>
-                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[140px]">預計交期</th>
-                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[140px]">交期狀態</th>
-                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[250px]">產品名稱</th>
-                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[120px] text-right">訂單數量</th>
-                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[120px] text-right">已收數量</th>
+                        <!-- 動態欄位 Header -->
+                        <th v-for="col in visibleDynamicColumns" :key="col.id"
+                            :class="['py-2.5 px-3 font-normal whitespace-nowrap', col.width, col.align || 'text-left']">
+                            {{ col.label }}
+                        </th>
+                        <!-- 操作欄位 Header -->
                         <th class="py-2.5 px-3 font-normal whitespace-nowrap w-12 text-center">操作</th>
                     </tr>
                 </thead>
-                
+
                 <!-- Table Body -->
                 <tbody class="text-sm relative">
                     <!-- Top Padding -->
                     <tr v-if="virtualState.paddingTop > 0" :style="{ height: virtualState.paddingTop + 'px' }">
-                        <td colspan="10" class="p-0 border-none bg-transparent"></td>
+                        <td :colspan="visibleDynamicColumns.length + 3" class="p-0 border-none bg-transparent"></td>
                     </tr>
 
                     <!-- 僅渲染可見範圍內的列 -->
                     <template v-for="row in virtualState.visibleItems" :key="row.id">
-                        
+
                         <!-- 類型 1: Group Header -->
-                        <tr v-if="row.type === 'group'" class="cursor-pointer select-none group-header" @click="toggleGroup(row.data.key)">
-                            <td colspan="10" class="p-0 bg-inherit">
+                        <tr v-if="row.type === 'group'" class="cursor-pointer select-none group-header"
+                            @click="toggleGroup(row.data.key)">
+                            <td :colspan="visibleDynamicColumns.length + 3" class="p-0 bg-inherit">
                                 <div class="sticky left-0 flex items-center gap-2 py-2.5 px-4 w-max text-white">
-                                    <i data-lucide="chevron-right" class="w-4 h-4 text-notion-muted transition-transform duration-200" :class="{'rotate-90': groupExpanded[row.data.key]}"></i>
-                                    <i v-if="groupBy === 'orderNo'" data-lucide="file-text" class="w-4 h-4 text-notion-blue"></i>
-                                    <i v-if="groupBy === 'supplier'" data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        class="w-4 h-4 text-notion-muted transition-transform duration-200"
+                                        :class="{'rotate-90': groupExpanded[row.data.key]}">
+                                        <path d="m9 18 6-6-6-6" />
+                                    </svg>
+                                    <svg v-if="!groupExpanded[row.data.key]" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2" class="w-4 h-4 text-notion-blue">
+                                        <path
+                                            d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                                    </svg>
+                                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        class="w-4 h-4 text-notion-blue">
+                                        <path
+                                            d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
+                                        <path d="M2 10h20" />
+                                    </svg>
                                     <span class="text-base font-medium">{{ row.data.title }}</span>
-                                    <span class="text-notion-muted text-xs font-normal ml-2">{{ row.data.items.length }} 筆明細</span>
-                                    <span v-if="groupBy === 'orderNo'" class="ml-4 text-xs text-notion-muted bg-[#1A1A1A] px-2 py-0.5 rounded border border-notion-border">
-                                        總量: {{ row.data.items.reduce((sum, item) => sum + item.quantity, 0).toLocaleString() }}
+                                    <span class="text-notion-muted text-xs font-normal ml-2">{{ row.data.items.length }}
+                                        筆明細</span>
+                                    <span v-if="groupBy === 'orderNo'"
+                                        class="ml-4 text-xs text-notion-muted bg-[#1A1A1A] px-2 py-0.5 rounded border border-notion-border">
+                                        總量: {{ row.data.items.reduce((sum, item) => sum + item.quantity,
+                                        0).toLocaleString() }}
                                     </span>
                                 </div>
                             </td>
@@ -228,103 +406,304 @@
 
                         <!-- 類型 2: Item Row -->
                         <template v-else-if="row.type === 'item'">
-                            <tr class="group/row" :class="{'table-row-selected': row.data.expanded || selectedMap[row.data.id]}">
-                                <td class="py-2 px-3 align-top sticky-col-1 text-center">
-                                    <input type="checkbox" :checked="selectedMap[row.data.id]" @change="toggleSelect(row.data.id)" class="rounded border border-notion-border bg-[#191919] text-notion-blue focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer mt-0.5 transition-all">
+                            <tr class="group/row"
+                                :class="{'table-row-selected': row.data.expanded || selectedMap[row.data.id]}">
+                                <td class="py-2 px-3 align-top sticky-col-checkbox text-center">
+                                    <input type="checkbox" :checked="selectedMap[row.data.id]"
+                                        @change="toggleSelect(row.data.id)"
+                                        class="rounded border border-notion-border bg-[#191919] text-notion-blue focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer mt-0.5 transition-all">
                                 </td>
-                                <td class="py-2 px-3 align-top sticky-col-2">
+                                <td class="py-2 px-3 align-top sticky-col-orderInfo">
                                     <div class="flex items-center gap-1.5" :class="{'pl-4': groupBy !== 'none'}">
-                                        <button @click="toggleRow(row.data.id)" class="p-0.5 rounded hover:bg-neutral-700 text-notion-muted flex-shrink-0 transition-transform duration-200" :class="{'rotate-90': row.data.expanded}">
-                                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                        <button @click="toggleRow(row.data.id)"
+                                            class="p-0.5 rounded hover:bg-neutral-700 text-notion-muted flex-shrink-0 transition-transform duration-200"
+                                            :class="{'rotate-90': row.data.expanded}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                class="w-4 h-4">
+                                                <path d="m9 18 6-6-6-6" />
+                                            </svg>
                                         </button>
                                         <div class="flex flex-col">
                                             <span class="font-medium text-notion-text flex items-center gap-1">
-                                                <i data-lucide="file-box" class="w-3.5 h-3.5 text-notion-muted"></i> {{ row.data.lineId }}
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" class="w-3.5 h-3.5 text-notion-muted">
+                                                    <path d="M21 8v13H3V8" />
+                                                    <path d="M1 3h22v5H1z" />
+                                                    <path d="M10 12h4" />
+                                                </svg>
+                                                {{ row.data.lineId }}
                                             </span>
-                                            <span v-if="groupBy !== 'orderNo'" class="text-[10px] text-notion-muted mt-0.5 ml-4">{{ row.data.orderNo }}</span>
+                                            <span v-if="groupBy !== 'orderNo'"
+                                                class="text-[10px] text-notion-muted mt-0.5 ml-4">{{ row.data.orderNo
+                                                }}</span>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="py-2 px-3 align-top whitespace-nowrap">
-                                    <span class="px-2 py-0.5 rounded text-xs" :style="{ backgroundColor: row.data.supplier.bg, color: row.data.supplier.text }">{{ row.data.supplier.name }}</span>
-                                </td>
-                                <td class="py-2 px-3 align-top text-notion-text">{{ row.data.orderDate }}</td>
-                                <td class="py-2 px-3 align-top text-notion-text font-medium flex items-center gap-1.5">
-                                    {{ row.data.expectedDate }}
-                                    <span v-if="row.data.isExpedite" title="急件" class="text-[10px] bg-notion-tag-red-bg text-notion-tag-red-text px-1 rounded flex items-center gap-0.5">
-                                        🔥 急
-                                    </span>
-                                </td>
-                                <td class="py-2 px-3 align-top">
-                                    <div class="flex flex-col items-start gap-1">
-                                        <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs" :style="{ backgroundColor: row.data.status.bg, color: row.data.status.text }">
-                                            <div class="w-1.5 h-1.5 rounded-full" :class="row.data.status.dotClass"></div>
-                                            {{ row.data.status.label }}
-                                        </div>
-                                        <span v-if="row.data.status.label === '延遲'" class="text-[10px] text-red-400 ml-1 font-medium bg-red-900/20 px-1 rounded">
-                                            +{{ row.data.delayDays }} days
+
+                                <td v-for="col in visibleDynamicColumns" :key="col.id"
+                                    :class="['py-2 px-3 align-top', col.align || 'text-left']">
+                                    <template v-if="col.id === 'supplier'">
+                                        <span class="px-2 py-0.5 rounded text-xs"
+                                            :style="{ backgroundColor: row.data.supplier.bg, color: row.data.supplier.text }">{{
+                                            row.data.supplier.name }}</span>
+                                    </template>
+                                    <template v-else-if="col.id === 'orderDate'">{{ row.data.orderDate }}</template>
+                                    <template v-else-if="col.id === 'expectedDate'">
+                                        <span class="flex items-center gap-1.5 font-medium">
+                                            {{ row.data.expectedDate }}
+                                            <span v-if="row.data.isExpedite" title="急件"
+                                                class="text-[10px] bg-notion-tag-red-bg text-notion-tag-red-text px-1 rounded flex items-center gap-0.5">急件</span>
                                         </span>
-                                    </div>
+                                    </template>
+                                    <template v-else-if="col.id === 'status'">
+                                        <div class="flex flex-col items-start gap-1">
+                                            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
+                                                :style="{ backgroundColor: row.data.status.bg, color: row.data.status.text }">
+                                                <div class="w-1.5 h-1.5 rounded-full" :class="row.data.status.dotClass">
+                                                </div>
+                                                {{ row.data.status.label }}
+                                            </div>
+                                            <span v-if="row.data.status.label === '延遲'"
+                                                class="text-[10px] text-red-400 ml-1 font-medium bg-red-900/20 px-1 rounded">+{{
+                                                row.data.delayDays }} days</span>
+                                        </div>
+                                    </template>
+                                    <template v-else-if="col.id === 'productName'">
+                                        <div class="truncate max-w-[220px]" :title="row.data.productName">{{
+                                            row.data.productName }}</div>
+                                    </template>
+                                    <template v-else-if="col.id === 'quantity'">
+                                        <span class="font-medium">{{ row.data.quantity.toLocaleString() }}</span> <span
+                                            class="text-[10px] text-notion-muted font-normal">{{ row.data.uom }}</span>
+                                    </template>
+                                    <template v-else-if="col.id === 'receivedQuantity'">
+                                        <span>{{ row.data.receivedQuantity.toLocaleString() }}</span> <span
+                                            class="text-[10px] text-notion-muted">{{ row.data.uom }}</span>
+                                    </template>
                                 </td>
-                                <td class="py-2 px-3 align-top text-notion-text">
-                                    <div class="truncate max-w-[220px]" :title="row.data.productName">{{ row.data.productName }}</div>
-                                </td>
-                                <td class="py-2 px-3 align-top text-right text-notion-text font-medium">
-                                    {{ row.data.quantity.toLocaleString() }} <span class="text-[10px] text-notion-muted font-normal">{{ row.data.uom }}</span>
-                                </td>
-                                <td class="py-2 px-3 align-top text-right text-notion-text">
-                                    {{ row.data.receivedQuantity.toLocaleString() }} <span class="text-[10px] text-notion-muted">{{ row.data.uom }}</span>
-                                </td>
+
                                 <td class="py-2 px-3 align-top text-center">
-                                    <button @click="toggleRow(row.data.id)" class="opacity-0 group-hover/row:opacity-100 text-notion-muted hover:text-white p-1 rounded transition-all">
-                                        <i data-lucide="settings-2" class="w-4 h-4"></i>
+                                    <button @click="toggleRow(row.data.id)"
+                                        class="opacity-0 group-hover/row:opacity-100 text-notion-muted hover:text-white p-1 rounded transition-all">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            class="w-4 h-4">
+                                            <path d="M3 12h18" />
+                                            <path d="M3 6h18" />
+                                            <path d="M3 18h18" />
+                                            <circle cx="8" cy="12" r="2" />
+                                            <circle cx="16" cy="6" r="2" />
+                                            <circle cx="16" cy="18" r="2" />
+                                        </svg>
                                     </button>
                                 </td>
                             </tr>
-                            
+
                             <!-- 類型 3: Expanded Content -->
                             <tr v-if="row.data.expanded" class="table-row-expanded">
-                                <!-- 🌟 完美解法：使用 colspan="10" 橫跨整列，移除原本多餘的空白 Sticky 欄位 -->
-                                <td colspan="10" class="p-0 align-top border-b border-notion-border/50 relative">
-                                    <!-- 🌟 將內部容器釘在最左側 (left-0)，並給予 pl-[68px] 內縮，與上方的 checkbox / 標題對齊 -->
+                                <td :colspan="visibleDynamicColumns.length + 3"
+                                    class="p-0 align-top border-b border-notion-border/50 relative">
                                     <div class="sticky left-0 py-4 pl-[68px] pr-6 flex gap-8 w-max">
-                                        
-                                        <!-- 交期拆分計畫 -->
-                                        <div class="flex-1 w-[350px]">
-                                            <div class="flex items-center gap-2 mb-3 text-sm font-medium text-notion-muted">
-                                                <i data-lucide="git-pull-request" class="w-4 h-4 text-notion-blue"></i> 交期拆分計畫
+                                        <div class="flex-1 w-[450px]">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <div
+                                                    class="flex items-center gap-2 text-sm font-medium text-notion-muted">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" class="w-4 h-4 text-notion-blue">
+                                                        <circle cx="18" cy="18" r="3" />
+                                                        <circle cx="6" cy="6" r="3" />
+                                                        <path d="M13 6h3a2 2 0 0 1 2 2v7" />
+                                                        <line x1="6" x2="6" y1="9" y2="21" />
+                                                    </svg>
+                                                    交期拆分計畫
+                                                </div>
+                                                <div v-if="editingSplitOrderId !== row.data.id">
+                                                    <button @click="startEditSplit(row.data)"
+                                                        class="text-xs flex items-center gap-1 text-notion-muted hover:text-notion-text hover:bg-notion-hover px-2 py-1 rounded transition-colors">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                            stroke-width="2" class="w-3.5 h-3.5">
+                                                            <path
+                                                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                                            <path
+                                                                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                        </svg> 編輯拆分
+                                                    </button>
+                                                </div>
+                                                <div v-else class="flex items-center gap-2">
+                                                    <span class="text-[10px] text-notion-muted opacity-70">Enter 換行/儲存,
+                                                        Esc 取消</span>
+                                                    <button @click="cancelEditSplit(row.data)"
+                                                        class="text-xs text-notion-muted hover:text-white px-2 py-1 rounded hover:bg-neutral-700 transition-colors">取消</button>
+                                                </div>
                                             </div>
-                                            <div class="border border-notion-border rounded-lg overflow-hidden bg-[#1A1A1A]">
+
+                                            <div v-if="editingSplitOrderId === row.data.id"
+                                                class="mb-2 text-xs flex justify-end"
+                                                :class="getRemainingColorClass(getRemainingQty(row.data))">
+                                                <span v-if="getRemainingQty(row.data) > 0">待排程: {{
+                                                    getRemainingQty(row.data).toLocaleString() }} {{ row.data.uom
+                                                    }}</span>
+                                                <span v-else-if="getRemainingQty(row.data) < 0"
+                                                    class="flex items-center gap-1"><svg viewBox="0 0 24 24" fill="none"
+                                                        stroke="currentColor" stroke-width="2" class="w-3 h-3">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <line x1="12" x2="12" y1="8" y2="12" />
+                                                        <line x1="12" x2="12.01" y1="16" y2="16" />
+                                                    </svg> 超排: {{ Math.abs(getRemainingQty(row.data)).toLocaleString()
+                                                    }} {{ row.data.uom }}</span>
+                                                <span v-else class="text-notion-tag-green-text">數量已排滿 (按 Enter
+                                                    儲存)</span>
+                                            </div>
+
+                                            <div class="border border-notion-border rounded-lg overflow-hidden"
+                                                :class="editingSplitOrderId === row.data.id ? 'bg-[#1E1E1E] ring-1 ring-notion-border' : 'bg-[#1A1A1A]'">
                                                 <table class="w-full text-left text-sm min-w-full">
                                                     <thead class="bg-[#2C2C2C] text-notion-muted">
-                                                        <tr><th class="py-2 px-3 font-normal w-[140px] !static">預定到貨日</th><th class="py-2 px-3 font-normal text-right !static">預計數量</th></tr>
+                                                        <tr>
+                                                            <th class="py-2 px-3 font-normal w-[150px] !static">預定到貨日
+                                                            </th>
+                                                            <th class="py-2 px-3 font-normal text-right !static">預計數量
+                                                            </th>
+                                                            <th v-if="editingSplitOrderId === row.data.id"
+                                                                class="py-2 px-2 w-8"></th>
+                                                        </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr v-for="split in row.data.splits" :key="split.id">
-                                                            <td class="py-2 px-3 text-notion-text border-b border-notion-border/50"><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1.5 text-notion-muted"></i>{{ split.date }}</td>
-                                                            <td class="py-2 px-3 text-right text-notion-text font-medium border-b border-notion-border/50">{{ split.qty.toLocaleString() }} <span class="text-[10px] text-notion-muted">{{ row.data.uom }}</span></td>
-                                                        </tr>
+                                                        <template v-if="editingSplitOrderId === row.data.id">
+                                                            <tr v-if="draftSplits.length === 0">
+                                                                <td colspan="3"
+                                                                    class="py-3 text-center text-xs text-notion-muted">按
+                                                                    Enter 新增第一筆</td>
+                                                            </tr>
+                                                            <tr v-for="(split, index) in draftSplits" :key="index"
+                                                                class="group/draft">
+                                                                <td class="p-0 border-b border-notion-border/50">
+                                                                    <input type="date" v-model="split.date"
+                                                                        :ref="el => setInputRef(el, row.data.id, index, 'date')"
+                                                                        @keydown.enter.prevent="moveFocus(row.data.id, index, 'qty')"
+                                                                        @keydown.right.prevent="moveFocus(row.data.id, index, 'qty')"
+                                                                        @keydown.up.prevent="moveFocus(row.data.id, index - 1, 'date')"
+                                                                        @keydown.down.prevent="moveFocus(row.data.id, index + 1, 'date')"
+                                                                        @keydown.esc="cancelEditSplit(row.data)"
+                                                                        class="bg-transparent border-none focus:ring-1 focus:ring-inset focus:ring-notion-blue focus:bg-[#2C2C2C] w-full h-full py-2 px-3 text-sm text-notion-text outline-none transition-colors">
+                                                                </td>
+                                                                <td
+                                                                    class="p-0 border-b border-notion-border/50 relative">
+                                                                    <input type="number" v-model.number="split.qty"
+                                                                        :ref="el => setInputRef(el, row.data.id, index, 'qty')"
+                                                                        @keydown.enter.prevent="handleQtyEnter(row.data, index)"
+                                                                        @keydown.left.prevent="moveFocus(row.data.id, index, 'date')"
+                                                                        @keydown.up.prevent="moveFocus(row.data.id, index - 1, 'qty')"
+                                                                        @keydown.down.prevent="moveFocus(row.data.id, index + 1, 'qty')"
+                                                                        @keydown.esc="cancelEditSplit(row.data)"
+                                                                        class="bg-transparent border-none focus:ring-1 focus:ring-inset focus:ring-notion-blue focus:bg-[#2C2C2C] w-full h-full py-2 pr-8 pl-3 text-sm text-notion-text text-right outline-none transition-colors">
+                                                                    <span
+                                                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-notion-muted pointer-events-none">{{
+                                                                        row.data.uom }}</span>
+                                                                </td>
+                                                                <td
+                                                                    class="p-1 text-center border-b border-notion-border/50">
+                                                                    <button tabindex="-1"
+                                                                        @click="removeDraftSplit(index)"
+                                                                        class="p-1 rounded text-notion-muted hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover/draft:opacity-100"><svg
+                                                                            viewBox="0 0 24 24" fill="none"
+                                                                            stroke="currentColor" stroke-width="2"
+                                                                            class="w-3.5 h-3.5">
+                                                                            <path d="M3 6h18" />
+                                                                            <path
+                                                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                                                        </svg></button>
+                                                                </td>
+                                                            </tr>
+                                                        </template>
+                                                        <template v-else>
+                                                            <tr v-if="row.data.splits.length === 0">
+                                                                <td colspan="2"
+                                                                    class="py-4 px-3 text-center text-notion-muted text-xs italic border-b border-notion-border/50">
+                                                                    尚未建立拆分</td>
+                                                            </tr>
+                                                            <tr v-for="split in row.data.splits" :key="split.id">
+                                                                <td
+                                                                    class="py-2 px-3 text-notion-text border-b border-notion-border/50">
+                                                                    <svg viewBox="0 0 24 24" fill="none"
+                                                                        stroke="currentColor" stroke-width="2"
+                                                                        class="w-3.5 h-3.5 inline mr-1.5 text-notion-muted">
+                                                                        <rect width="18" height="18" x="3" y="4" rx="2"
+                                                                            ry="2" />
+                                                                        <line x1="16" x2="16" y1="2" y2="6" />
+                                                                        <line x1="8" x2="8" y1="2" y2="6" />
+                                                                        <line x1="3" x2="21" y1="10" y2="10" />
+                                                                    </svg>{{ split.date }}
+                                                                </td>
+                                                                <td
+                                                                    class="py-2 px-3 text-right text-notion-text font-medium border-b border-notion-border/50">
+                                                                    {{ split.qty.toLocaleString() }} <span
+                                                                        class="text-[10px] text-notion-muted">{{
+                                                                        row.data.uom }}</span></td>
+                                                            </tr>
+                                                        </template>
                                                     </tbody>
                                                 </table>
                                             </div>
                                         </div>
-                                        
+
                                         <!-- 詳細收料紀錄 -->
                                         <div class="flex-1 w-[400px]">
-                                            <div class="flex items-center gap-2 mb-3 text-sm font-medium text-notion-muted">
-                                                <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-400"></i> 詳細收料紀錄
+                                            <div
+                                                class="flex items-center gap-2 mb-3 text-sm font-medium text-notion-muted">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" class="w-4 h-4 text-emerald-400">
+                                                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                                                    <line x1="16" x2="16" y1="2" y2="6" />
+                                                    <line x1="8" x2="8" y1="2" y2="6" />
+                                                    <line x1="3" x2="21" y1="10" y2="10" />
+                                                    <path d="m9 16 2 2 4-4" />
+                                                </svg> 詳細收料紀錄
                                             </div>
-                                            <div class="border border-notion-border rounded-lg overflow-hidden bg-[#1A1A1A]">
+                                            <div
+                                                class="border border-notion-border rounded-lg overflow-hidden bg-[#1A1A1A]">
                                                 <table class="w-full text-left text-sm min-w-full">
                                                     <thead class="bg-[#2C2C2C] text-notion-muted">
-                                                        <tr><th class="py-2 px-3 font-normal !static">收料日期</th><th class="py-2 px-3 font-normal text-right !static">實收數量</th><th class="py-2 px-3 font-normal !static">驗收單號</th></tr>
+                                                        <tr>
+                                                            <th class="py-2 px-3 font-normal !static">收料日期</th>
+                                                            <th class="py-2 px-3 font-normal text-right !static">實收數量
+                                                            </th>
+                                                            <th class="py-2 px-3 font-normal !static">驗收單號</th>
+                                                        </tr>
                                                     </thead>
                                                     <tbody>
-                                                        <tr v-if="row.data.records.length === 0"><td colspan="3" class="py-4 px-3 text-center text-notion-muted text-xs italic border-b border-notion-border/50">尚無收料紀錄</td></tr>
+                                                        <tr v-if="row.data.records.length === 0">
+                                                            <td colspan="3"
+                                                                class="py-4 px-3 text-center text-notion-muted text-xs italic border-b border-notion-border/50">
+                                                                尚無收料紀錄</td>
+                                                        </tr>
                                                         <tr v-for="rec in row.data.records" :key="rec.docNo">
-                                                            <td class="py-2 px-3 text-notion-text border-b border-notion-border/50"><i data-lucide="calendar-check" class="w-3.5 h-3.5 inline mr-1.5 text-notion-muted"></i>{{ rec.date }}</td>
-                                                            <td class="py-2 px-3 text-right text-notion-text font-medium border-b border-notion-border/50">{{ rec.qty.toLocaleString() }}</td>
-                                                            <td class="py-2 px-3 text-notion-muted border-b border-notion-border/50"><i data-lucide="file-check" class="w-3.5 h-3.5 inline mr-1 text-notion-muted"></i>{{ rec.docNo }}</td>
+                                                            <td
+                                                                class="py-2 px-3 text-notion-text border-b border-notion-border/50">
+                                                                <svg viewBox="0 0 24 24" fill="none"
+                                                                    stroke="currentColor" stroke-width="2"
+                                                                    class="w-3.5 h-3.5 inline mr-1.5 text-notion-muted">
+                                                                    <rect width="18" height="18" x="3" y="4" rx="2"
+                                                                        ry="2" />
+                                                                    <line x1="16" x2="16" y1="2" y2="6" />
+                                                                    <line x1="8" x2="8" y1="2" y2="6" />
+                                                                    <line x1="3" x2="21" y1="10" y2="10" />
+                                                                    <path d="m9 16 2 2 4-4" />
+                                                                </svg>{{ rec.date }}
+                                                            </td>
+                                                            <td
+                                                                class="py-2 px-3 text-right text-notion-text font-medium border-b border-notion-border/50">
+                                                                {{ rec.qty.toLocaleString() }}</td>
+                                                            <td
+                                                                class="py-2 px-3 text-notion-muted border-b border-notion-border/50">
+                                                                <svg viewBox="0 0 24 24" fill="none"
+                                                                    stroke="currentColor" stroke-width="2"
+                                                                    class="w-3.5 h-3.5 inline mr-1 text-notion-muted">
+                                                                    <path
+                                                                        d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                                                                    <polyline points="14 2 14 8 20 8" />
+                                                                    <path d="m9 15 2 2 4-4" />
+                                                                </svg>{{ rec.docNo }}
+                                                            </td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -336,33 +715,102 @@
                         </template>
                     </template>
 
-                    <!-- Bottom Padding -->
                     <tr v-if="virtualState.paddingBottom > 0" :style="{ height: virtualState.paddingBottom + 'px' }">
-                        <td colspan="10" class="p-0 border-none bg-transparent"></td>
+                        <td :colspan="visibleDynamicColumns.length + 3" class="p-0 border-none bg-transparent"></td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
+        <!-- =========================================================
+             🌟 視圖 2: 交期行事曆 (Calendar View)
+             ========================================================= -->
+        <div v-else-if="currentView === 'calendar'"
+            class="flex-1 flex flex-col bg-[#191919] border border-notion-border rounded-lg overflow-hidden">
+            <!-- Calendar Header -->
+            <div class="flex items-center justify-between p-4 border-b border-notion-border">
+                <div class="flex items-center gap-4">
+                    <h3 class="text-lg font-semibold text-white">{{ currentMonthYearDisplay }}</h3>
+                    <div class="flex items-center gap-1 bg-[#252525] rounded-md p-0.5 border border-[#2F3336]">
+                        <button @click="prevMonth"
+                            class="p-1 hover:bg-[#333] rounded text-notion-muted hover:text-white transition-colors"><i
+                                data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <button @click="goToday"
+                            class="px-3 py-1 text-xs font-medium text-notion-muted hover:text-white hover:bg-[#333] rounded transition-colors">今天</button>
+                        <button @click="nextMonth"
+                            class="p-1 hover:bg-[#333] rounded text-notion-muted hover:text-white transition-colors"><i
+                                data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                <div class="text-xs text-notion-muted flex items-center gap-2">
+                    <span class="flex items-center gap-1"><span
+                            class="w-2 h-2 rounded-full bg-notion-tag-red-text"></span> 延遲/急件</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-notion-blue"></span>
+                        正常交貨</span>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="flex-1 grid grid-cols-7 grid-rows-[auto_1fr] overflow-hidden bg-[#222]">
+                <!-- Weekdays -->
+                <div v-for="day in ['週日', '週一', '週二', '週三', '週四', '週五', '週六']" :key="day"
+                    class="py-2.5 text-center text-xs font-medium text-notion-muted border-b border-r border-notion-border bg-[#191919]">
+                    {{ day }}
+                </div>
+                <!-- Days Cells -->
+                <div class="col-span-7 grid grid-cols-7 auto-rows-fr overflow-y-auto">
+                    <div v-for="(day, idx) in calendarGrid" :key="day.dateStr"
+                        class="min-h-[140px] p-1.5 border-r border-b border-notion-border flex flex-col transition-colors"
+                        :class="{'bg-[#1c1c1c]': !day.isCurrentMonth, 'bg-[#191919]': day.isCurrentMonth}">
+                        <div class="text-right px-1 mb-1.5">
+                            <span class="text-xs font-medium"
+                                :class="{'text-white bg-notion-blue px-2 py-0.5 rounded-full shadow-[0_0_8px_rgba(35,131,226,0.6)]': day.dateStr === mockToday, 'text-notion-text': day.dateStr !== mockToday && day.isCurrentMonth, 'text-notion-muted': !day.isCurrentMonth}">
+                                {{ day.dayNumber }}
+                            </span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto overflow-x-hidden space-y-1.5 pr-0.5 calendar-scrollbar">
+                            <div v-for="event in day.events" :key="event.id"
+                                class="text-[10px] px-1.5 py-1 rounded truncate cursor-pointer transition-colors border hover:border-notion-text/50"
+                                :style="{ backgroundColor: event.status.bg, color: event.status.text, borderColor: event.status.border || 'transparent' }"
+                                :title="`訂單: ${event.lineId}\n產品: ${event.productName}\n供應商: ${event.supplier.name}\n數量: ${event.qty.toLocaleString()} ${event.uom}`">
+                                <div class="flex justify-between items-center font-medium">
+                                    <span class="truncate pr-1 drop-shadow-md">{{ event.lineId }}</span>
+                                    <span class="flex-shrink-0">{{ event.qty.toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 懸浮批次操作列 -->
         <transition name="slide-up">
-            <div v-if="selectedCount > 0" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#2C2C2C] border border-notion-border shadow-2xl shadow-black/50 rounded-full px-6 py-3 flex items-center gap-5 z-50">
+            <div v-if="selectedCount > 0 && currentView === 'table'"
+                class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#2C2C2C] border border-notion-border shadow-2xl shadow-black/50 rounded-full px-6 py-3 flex items-center gap-5 z-50">
                 <div class="flex items-center gap-2">
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-notion-blue text-xs font-bold text-white">{{ selectedCount }}</span>
+                    <span
+                        class="flex h-5 w-5 items-center justify-center rounded-full bg-notion-blue text-xs font-bold text-white">{{
+                        selectedCount }}</span>
                     <span class="text-sm text-white font-medium">筆明細已選取</span>
                 </div>
                 <div class="w-px h-5 bg-[#474C50]"></div>
-                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> 批次催料</button>
-                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="calendar-clock" class="w-4 h-4 text-orange-400"></i> Push Out (遞延)</button>
-                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="download" class="w-4 h-4 text-notion-blue"></i> 匯出 Excel</button>
+                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i
+                        data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> 批次催料</button>
+                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i
+                        data-lucide="calendar-clock" class="w-4 h-4 text-orange-400"></i> Push Out (遞延)</button>
+                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i
+                        data-lucide="download" class="w-4 h-4 text-notion-blue"></i> 匯出 Excel</button>
                 <div class="w-px h-5 bg-[#474C50]"></div>
-                <button @click="clearSelection" class="text-sm text-notion-muted hover:text-red-400 transition-colors flex items-center gap-1"><i data-lucide="x-circle" class="w-4 h-4"></i> 取消</button>
+                <button @click="clearSelection"
+                    class="text-sm text-notion-muted hover:text-red-400 transition-colors flex items-center gap-1"><i
+                        data-lucide="x-circle" class="w-4 h-4"></i> 取消</button>
             </div>
         </transition>
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
 
         const tags = {
             supplierA: { name: '德州儀器 (TI)', bg: 'rgba(35, 131, 226, 0.2)', text: '#529be5' },
@@ -374,11 +822,12 @@
         const statuses = {
             producing: { label: '生產中', bg: 'rgba(35, 131, 226, 0.15)', text: '#7ab4ed', dotClass: 'bg-blue-400' },
             received: { label: '部分收料', bg: 'rgba(235, 195, 71, 0.15)', text: '#f2c94c', dotClass: 'bg-yellow-400' },
-            delayed: { label: '延遲', bg: 'rgba(212, 115, 53, 0.15)', text: '#e58e55', dotClass: 'bg-orange-500' },
+            delayed: { label: '延遲', bg: 'rgba(212, 115, 53, 0.25)', text: '#e58e55', border: 'rgba(212, 115, 53, 0.5)', dotClass: 'bg-orange-500' },
             completed: { label: '已完成', bg: 'rgba(46, 170, 110, 0.15)', text: '#43c87f', dotClass: 'bg-green-500' },
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
+        const mockToday = '2026-04-18'; // ERP 系統基準日
 
         // --- Data Generator ---
         const generateMockOrders = (count) => {
@@ -386,22 +835,22 @@
             const statusValues = Object.values(statuses);
             const products = ['MCU-32 微控制器', 'PMIC 電源管理晶片', '高頻電感 10uH', '散熱模組 (銅底)', 'MLCC 0402 被動元件'];
             const uoms = ['pcs', 'reel', 'kg', 'set'];
-            
+
             const results = [];
             let poIndex = 1;
-            const today = new Date('2026-04-18');
+            const today = new Date(mockToday);
 
             for (let i = 1; i <= count; i++) {
                 if (i % 5 === 0) poIndex++;
                 const orderNo = `PO-2026-${String(poIndex).padStart(4, '0')}`;
-                
+
                 const qty = Math.floor(Math.random() * 5000) + 100;
                 const rcvQty = Math.floor(Math.random() * qty);
                 const sup = suppliers[Math.floor(Math.random() * suppliers.length)];
-                
+
                 const expDate = new Date(today);
                 const dayDiff = Math.floor(Math.random() * 40) - 10;
-                expDate.setDate(today.getDate() + dayDiff); 
+                expDate.setDate(today.getDate() + dayDiff);
                 const dateStr = expDate.toISOString().split('T')[0];
 
                 const stat = statusValues[Math.floor(Math.random() * statusValues.length)];
@@ -409,26 +858,37 @@
                 const delayDays = isLate ? Math.abs(dayDiff) : 0;
                 const isExpedite = dayDiff >= 0 && dayDiff <= 7 && stat.label !== '已完成';
 
-                // 模擬 1-3 筆歷史紀錄
+                // 生成多筆拆分來豐富日曆視圖
+                const splitsCount = Math.floor(Math.random() * 2) + 1;
+                const splits = [];
+                let remQtySplit = qty;
+                for (let j = 0; j < splitsCount; j++) {
+                    const splitDate = new Date(expDate);
+                    splitDate.setDate(expDate.getDate() + (j * 7)); // 每週交一批
+                    const alloc = j === splitsCount - 1 ? remQtySplit : Math.floor(remQtySplit / 2);
+                    splits.push({ id: generateId(), date: splitDate.toISOString().split('T')[0], qty: alloc });
+                    remQtySplit -= alloc;
+                }
+
                 const recordsCount = rcvQty > 0 ? Math.floor(Math.random() * 3) + 1 : 0;
                 const records = [];
                 let remQty = rcvQty;
-                for(let j=0; j<recordsCount; j++) {
+                for (let j = 0; j < recordsCount; j++) {
                     const alloc = j === recordsCount - 1 ? remQty : Math.floor(remQty / 2);
-                    if(alloc > 0) {
-                        records.push({ date: '2026-04-15', qty: alloc, docNo: `RCV-${Math.floor(Math.random()*9000)+1000}` });
+                    if (alloc > 0) {
+                        records.push({ date: '2026-04-15', qty: alloc, docNo: `RCV-${Math.floor(Math.random() * 9000) + 1000}` });
                         remQty -= alloc;
                     }
                 }
 
                 results.push({
-                    id: generateId(), orderNo, lineId: `${orderNo}-${String((i%5)+1).padStart(2, '0')}`, 
+                    id: generateId(), orderNo, lineId: `${orderNo}-${String((i % 5) + 1).padStart(2, '0')}`,
                     supplier: sup, orderDate: '2026-04-01', expectedDate: dateStr,
                     status: stat, delayDays, isExpedite,
                     productName: products[Math.floor(Math.random() * products.length)],
                     quantity: qty, receivedQuantity: rcvQty, uom: uoms[Math.floor(Math.random() * uoms.length)],
                     expanded: false,
-                    splits: [{ id: generateId(), date: dateStr, qty: qty }],
+                    splits: splits,
                     records: records
                 });
             }
@@ -439,7 +899,10 @@
             setup() {
                 const orders = ref(generateMockOrders(500));
 
-                // --- Search & Filtering ---
+                // 🌟 View State (table | calendar)
+                const currentView = ref('table');
+
+                // --- Search & Filtering (兩視圖共用) ---
                 const searchQuery = ref('');
                 const processedOrders = computed(() => {
                     let result = orders.value;
@@ -450,10 +913,110 @@
                     return result;
                 });
 
+                // --- Calendar Logic ---
+                const currentCalendarDate = ref(new Date('2026-04-01')); // 初始視圖月分
+
+                const currentMonthYearDisplay = computed(() => {
+                    return `${currentCalendarDate.value.getFullYear()}年 ${currentCalendarDate.value.getMonth() + 1}月`;
+                });
+
+                const prevMonth = () => {
+                    currentCalendarDate.value = new Date(currentCalendarDate.value.getFullYear(), currentCalendarDate.value.getMonth() - 1, 1);
+                };
+
+                const nextMonth = () => {
+                    currentCalendarDate.value = new Date(currentCalendarDate.value.getFullYear(), currentCalendarDate.value.getMonth() + 1, 1);
+                };
+
+                const goToday = () => {
+                    const todayDate = new Date(mockToday);
+                    currentCalendarDate.value = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+                };
+
+                // 動態計算月曆網格與映射事件
+                const calendarGrid = computed(() => {
+                    const year = currentCalendarDate.value.getFullYear();
+                    const month = currentCalendarDate.value.getMonth();
+                    const firstDay = new Date(year, month, 1);
+                    const lastDay = new Date(year, month + 1, 0);
+
+                    const startDate = new Date(firstDay);
+                    startDate.setDate(startDate.getDate() - startDate.getDay()); // 退回週日
+
+                    const endDate = new Date(lastDay);
+                    if (endDate.getDay() !== 6) {
+                        endDate.setDate(endDate.getDate() + (6 - endDate.getDay())); // 補齊至週六
+                    }
+
+                    const days = [];
+                    let d = new Date(startDate);
+                    while (d <= endDate) {
+                        const dateStr = d.toISOString().split('T')[0];
+                        days.push({
+                            dateObj: new Date(d),
+                            dateStr: dateStr,
+                            dayNumber: d.getDate(),
+                            isCurrentMonth: d.getMonth() === month,
+                            events: []
+                        });
+                        d.setDate(d.getDate() + 1);
+                    }
+
+                    // 映射事件：將 processedOrders 的 splits 灌入對應日期
+                    const daysMap = new Map(days.map(d => [d.dateStr, d]));
+                    processedOrders.value.forEach(order => {
+                        order.splits.forEach(split => {
+                            if (daysMap.has(split.date)) {
+                                daysMap.get(split.date).events.push({
+                                    id: split.id,
+                                    orderId: order.id,
+                                    lineId: order.lineId,
+                                    productName: order.productName,
+                                    qty: split.qty,
+                                    uom: order.uom,
+                                    status: order.status,
+                                    supplier: order.supplier
+                                });
+                            }
+                        });
+                    });
+
+                    return days;
+                });
+
+                // --- Column Customization & Drag-and-Drop ---
+                const showColumnSettings = ref(false);
+                const dynamicColumns = ref([
+                    { id: 'supplier', label: '供應商', visible: true, width: 'w-[150px]' },
+                    { id: 'orderDate', label: '訂單日期', visible: true, width: 'w-[120px]' },
+                    { id: 'expectedDate', label: '預計交期', visible: true, width: 'w-[140px]' },
+                    { id: 'status', label: '交期狀態', visible: true, width: 'w-[140px]' },
+                    { id: 'productName', label: '產品名稱', visible: true, width: 'w-[250px]' },
+                    { id: 'quantity', label: '訂單數量', visible: true, width: 'w-[120px]', align: 'text-right' },
+                    { id: 'receivedQuantity', label: '已收數量', visible: true, width: 'w-[120px]', align: 'text-right' }
+                ]);
+
+                const visibleDynamicColumns = computed(() => dynamicColumns.value.filter(col => col.visible));
+
+                const dragOverIndex = ref(null);
+                const dragStartIndex = ref(null);
+
+                const onDragStart = (index) => { dragStartIndex.value = index; };
+                const onDragOver = (e, index) => { dragOverIndex.value = index; };
+                const onDragLeave = () => { dragOverIndex.value = null; };
+                const onDrop = (index) => {
+                    if (dragStartIndex.value !== null && dragStartIndex.value !== index) {
+                        const col = dynamicColumns.value.splice(dragStartIndex.value, 1)[0];
+                        dynamicColumns.value.splice(index, 0, col);
+                    }
+                    dragStartIndex.value = null;
+                    dragOverIndex.value = null;
+                };
+
                 // --- Grouping ---
-                const groupBy = ref('orderNo'); 
+                const groupBy = ref('orderNo');
                 const showGroupMenu = ref(false);
-                const groupExpanded = ref({}); 
+                const groupExpanded = ref({});
                 const groupOptions = [
                     { label: '依訂單編號 (Header)', value: 'orderNo' },
                     { label: '依供應商 (Supplier)', value: 'supplier' },
@@ -463,21 +1026,19 @@
                 const setGroupBy = (type) => {
                     groupBy.value = type;
                     showGroupMenu.value = false;
-                    groupExpanded.value = {}; 
+                    groupExpanded.value = {};
                     nextTick(() => {
                         groupedOrders.value.slice(0, 5).forEach(g => groupExpanded.value[g.key] = true);
-                        lucide.createIcons();
                     });
                 };
 
                 const toggleGroup = (key) => {
                     groupExpanded.value[key] = !groupExpanded.value[key];
-                    nextTick(() => lucide.createIcons());
                 };
 
                 const groupedOrders = computed(() => {
                     if (groupBy.value === 'none') {
-                        groupExpanded.value['all'] = true; 
+                        groupExpanded.value['all'] = true;
                         return [{ key: 'all', title: '所有明細', items: processedOrders.value }];
                     }
                     const groups = {};
@@ -493,10 +1054,8 @@
                 const toggleRow = (id) => {
                     const order = orders.value.find(o => o.id === id);
                     if (order) order.expanded = !order.expanded;
-                    nextTick(() => lucide.createIcons());
                 };
 
-                // --- 全局收合/展開邏輯 ---
                 const isAllGroupsCollapsed = computed(() => Object.values(groupExpanded.value).filter(Boolean).length === 0);
                 const isAllDetailsCollapsed = computed(() => orders.value.every(o => !o.expanded));
 
@@ -505,16 +1064,14 @@
                     const newState = {};
                     if (targetState) { groupedOrders.value.forEach(g => newState[g.key] = true); }
                     groupExpanded.value = newState;
-                    nextTick(() => lucide.createIcons());
                 };
 
                 const toggleAllDetails = () => {
                     const targetState = isAllDetailsCollapsed.value;
                     orders.value.forEach(o => o.expanded = targetState);
-                    nextTick(() => lucide.createIcons());
                 };
 
-                // --- 自定義扁平化虛擬滾動 (Flat Virtual Scroller) ---
+                // --- Virtual Scroller ---
                 const scrollTop = ref(0);
                 const handleScroll = (e) => { scrollTop.value = e.target.scrollTop; };
 
@@ -531,14 +1088,16 @@
                     return list;
                 });
 
-                // 動態計算精確高度
                 const getItemHeight = (row) => {
                     if (row.type === 'group') return 45;
                     if (row.type === 'item') {
                         if (!row.data.expanded) return 53;
-                        const maxRows = Math.max(row.data.splits?.length || 1, row.data.records?.length || 1);
-                        const tableHeight = 36 + (maxRows * 37); 
-                        return 53 + 32 + 32 + tableHeight + 20; 
+                        const maxRows = Math.max(
+                            (editingSplitOrderId.value === row.data.id ? draftSplits.value.length : row.data.splits.length) || 1,
+                            row.data.records?.length || 1
+                        );
+                        const tableHeight = 36 + (maxRows * 37);
+                        return 53 + 32 + 32 + tableHeight + 20 + 24;
                     }
                     return 50;
                 };
@@ -558,18 +1117,18 @@
                     const st = scrollTop.value;
                     const posArr = positions.value.positions;
                     const total = posArr.length;
-                    if(total === 0) return { visibleItems: [], paddingTop: 0, paddingBottom: 0 };
+                    if (total === 0) return { visibleItems: [], paddingTop: 0, paddingBottom: 0 };
 
                     let start = 0, low = 0, high = total - 1;
-                    while(low <= high) {
+                    while (low <= high) {
                         let mid = Math.floor((low + high) / 2);
-                        if (posArr[mid] <= st) { start = mid; low = mid + 1; } 
+                        if (posArr[mid] <= st) { start = mid; low = mid + 1; }
                         else { high = mid - 1; }
                     }
 
                     start = Math.max(0, start - 5);
                     let end = start;
-                    const clientHeight = 1200; 
+                    const clientHeight = 1200;
                     while (end < total && posArr[end] < st + clientHeight + 800) end++;
                     end = Math.min(total, end + 5);
 
@@ -595,28 +1154,117 @@
                     selectedMap.value = newMap;
                 };
                 const clearSelection = () => { selectedMap.value = {}; };
-                
+
+                // --- 全鍵盤交期拆分 (Keyboard-First Split UI) ---
+                const editingSplitOrderId = ref(null);
+                const draftSplits = ref([]);
+                const splitInputs = ref({});
+
+                const setInputRef = (el, orderId, index, field) => {
+                    if (el) splitInputs.value[`${orderId}-${index}-${field}`] = el;
+                };
+
+                const startEditSplit = (order) => {
+                    editingSplitOrderId.value = order.id;
+                    draftSplits.value = JSON.parse(JSON.stringify(order.splits));
+                    splitInputs.value = {};
+
+                    if (draftSplits.value.length === 0) {
+                        draftSplits.value.push({ id: generateId(), date: '', qty: order.quantity });
+                    }
+
+                    nextTick(() => {
+                        const firstInput = splitInputs.value[`${order.id}-0-date`];
+                        if (firstInput) firstInput.focus();
+                    });
+                };
+
+                const cancelEditSplit = (order) => {
+                    editingSplitOrderId.value = null;
+                };
+
+                const saveSplit = (order) => {
+                    if (getRemainingQty(order) !== 0) return;
+                    order.splits = draftSplits.value.filter(s => s.qty > 0 && s.date).map(s => ({ ...s, id: s.id || generateId() }));
+                    editingSplitOrderId.value = null;
+                };
+
+                const moveFocus = (orderId, targetIndex, targetField) => {
+                    if (targetIndex < 0 || targetIndex >= draftSplits.value.length) return;
+                    const targetInput = splitInputs.value[`${orderId}-${targetIndex}-${targetField}`];
+                    if (targetInput) {
+                        targetInput.focus();
+                        if (targetField === 'qty') targetInput.select();
+                    }
+                };
+
+                const handleQtyEnter = (order, index) => {
+                    const rem = getRemainingQty(order);
+                    if (index === draftSplits.value.length - 1) {
+                        if (rem > 0) {
+                            const lastDate = draftSplits.value[index].date;
+                            draftSplits.value.push({ id: generateId(), date: lastDate, qty: rem });
+                            nextTick(() => moveFocus(order.id, index + 1, 'date'));
+                        } else if (rem === 0) {
+                            saveSplit(order);
+                        }
+                    } else {
+                        moveFocus(order.id, index + 1, 'date');
+                    }
+                };
+
+                const removeDraftSplit = (index) => {
+                    draftSplits.value.splice(index, 1);
+                };
+
+                const getRemainingQty = (order) => {
+                    if (editingSplitOrderId.value !== order.id) return 0;
+                    const scheduled = draftSplits.value.reduce((sum, s) => sum + (Number(s.qty) || 0), 0);
+                    return order.quantity - scheduled;
+                };
+
+                const getRemainingColorClass = (qty) => {
+                    if (qty < 0) return 'text-red-400';
+                    if (qty > 0) return 'text-orange-400';
+                    return 'text-notion-tag-green-text';
+                };
+
                 const groupDropdownWrapper = ref(null);
+                const columnSettingsWrapper = ref(null);
                 const handleClickOutside = (event) => {
                     if (groupDropdownWrapper.value && !groupDropdownWrapper.value.contains(event.target)) {
                         showGroupMenu.value = false;
                     }
+                    if (columnSettingsWrapper.value && !columnSettingsWrapper.value.contains(event.target)) {
+                        showColumnSettings.value = false;
+                    }
                 };
+
+                watch(currentView, (newVal) => {
+                    nextTick(() => { lucide.createIcons(); });
+                });
 
                 onMounted(() => {
                     setGroupBy('orderNo');
                     document.addEventListener('click', handleClickOutside);
+                    lucide.createIcons();
                 });
 
                 return {
-                    orders, processedOrders, searchQuery,
-                    groupBy, showGroupMenu, groupOptions, setGroupBy, groupedOrders, groupExpanded, 
-                    toggleGroup, toggleRow, isAllGroupsCollapsed, isAllDetailsCollapsed, toggleAllGroups, toggleAllDetails, groupDropdownWrapper,
+                    orders, processedOrders, searchQuery, currentView, mockToday,
+                    // Calendar
+                    currentCalendarDate, currentMonthYearDisplay, prevMonth, nextMonth, goToday, calendarGrid,
+                    // Table Setup
+                    groupBy, showGroupMenu, groupOptions, setGroupBy, groupedOrders, groupExpanded,
+                    toggleGroup, toggleRow, isAllGroupsCollapsed, isAllDetailsCollapsed, toggleAllGroups, toggleAllDetails, groupDropdownWrapper, columnSettingsWrapper,
                     handleScroll, virtualState,
-                    selectedMap, selectedCount, isAllSelected, isIndeterminate, toggleSelect, toggleSelectAll, clearSelection
+                    selectedMap, selectedCount, isAllSelected, isIndeterminate, toggleSelect, toggleSelectAll, clearSelection,
+                    showColumnSettings, dynamicColumns, visibleDynamicColumns, dragOverIndex, onDragStart, onDragOver, onDragLeave, onDrop,
+                    editingSplitOrderId, draftSplits, startEditSplit, cancelEditSplit, saveSplit, moveFocus, handleQtyEnter, removeDraftSplit, getRemainingQty, getRemainingColorClass, setInputRef
                 };
             }
         }).mount('#app');
     </script>
 </body>
+
 </html>

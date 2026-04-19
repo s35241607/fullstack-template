@@ -33,7 +33,13 @@
     Package,
   } from 'lucide-vue-next'
 
-  type StatusKey = 'completed' | 'partial' | 'delayed' | 'inTransit' | 'newArrival' | 'pullInPlanned'
+  type StatusKey =
+    | 'completed'
+    | 'partial'
+    | 'delayed'
+    | 'inTransit'
+    | 'newArrival'
+    | 'pullInPlanned'
 
   const route = useRoute()
   const router = useRouter()
@@ -82,11 +88,11 @@
     return new Intl.NumberFormat('en-US').format(value)
   }
 
-  function getScheduleOpenQty(schedule: PurchaseOrderSchedule) {
+  function getScheduleOpenQty(schedule: any) {
     return Math.max(schedule.quantity - schedule.received_quantity, 0)
   }
 
-  function getScheduleProgress(schedule: PurchaseOrderSchedule) {
+  function getScheduleProgress(schedule: any) {
     if (schedule.quantity === 0) return 0
     return Math.round((schedule.received_quantity / schedule.quantity) * 100)
   }
@@ -166,7 +172,11 @@
       </div>
       <Button
         variant="outline"
-        @click="router.push(order ? { name: 'po-detail', params: { orderId } } : { name: 'po-management' })"
+        @click="
+          router.push(
+            order ? { name: 'po-detail', params: { orderId } } : { name: 'po-management' },
+          )
+        "
       >
         <ArrowLeft :size="14" data-icon="inline-start" />
         {{ $t('poLineDetail.backToOrder') }}
@@ -314,9 +324,15 @@
                 <TableRow class="bg-muted/25 hover:bg-muted/25">
                   <TableHead>{{ $t('poLineDetail.scheduleTable.scheduleNo') }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.scheduleTable.commitDate') }}</TableHead>
-                  <TableHead class="text-right">{{ $t('poLineDetail.scheduleTable.quantity') }}</TableHead>
-                  <TableHead class="text-right">{{ $t('poLineDetail.scheduleTable.receivedQty') }}</TableHead>
-                  <TableHead class="text-right">{{ $t('poLineDetail.scheduleTable.openQty') }}</TableHead>
+                  <TableHead class="text-right">{{
+                    $t('poLineDetail.scheduleTable.quantity')
+                  }}</TableHead>
+                  <TableHead class="text-right">{{
+                    $t('poLineDetail.scheduleTable.receivedQty')
+                  }}</TableHead>
+                  <TableHead class="text-right">{{
+                    $t('poLineDetail.scheduleTable.openQty')
+                  }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.scheduleTable.origin') }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.scheduleTable.progress') }}</TableHead>
                 </TableRow>
@@ -325,12 +341,22 @@
                 <TableRow v-for="sch in line.schedules" :key="sch.id" class="hover:bg-accent/20">
                   <TableCell class="font-medium">{{ sch.schedule_no }}</TableCell>
                   <TableCell>{{ sch.commit_date }}</TableCell>
-                  <TableCell class="text-right tabular-nums">{{ formatNumber(sch.quantity) }}</TableCell>
-                  <TableCell class="text-right tabular-nums">{{ formatNumber(sch.received_quantity) }}</TableCell>
-                  <TableCell class="text-right tabular-nums">{{ formatNumber(getScheduleOpenQty(sch)) }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{
+                    formatNumber(sch.quantity)
+                  }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{
+                    formatNumber(sch.received_quantity)
+                  }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{
+                    formatNumber(getScheduleOpenQty(sch))
+                  }}</TableCell>
                   <TableCell>
                     <Badge variant="outline" :class="getOriginClasses(sch.origin)">
-                      {{ $t(`poManagement.status.${sch.origin === 'PULL_IN' ? 'pullIn' : 'original'}`) }}
+                      {{
+                        $t(
+                          `poManagement.status.${sch.origin === 'PULL_IN' ? 'pullIn' : 'original'}`,
+                        )
+                      }}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -361,7 +387,10 @@
           <CardDescription>{{ $t('poLineDetail.receiptSubtitle') }}</CardDescription>
         </CardHeader>
         <CardContent class="p-0">
-          <div v-if="allReceipts.length === 0" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+          <div
+            v-if="allReceipts.length === 0"
+            class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
+          >
             <ReceiptText :size="16" />
             <span>{{ $t('poLineDetail.noReceipts') }}</span>
           </div>
@@ -371,15 +400,23 @@
                 <TableRow class="bg-muted/25 hover:bg-muted/25">
                   <TableHead>{{ $t('poLineDetail.receiptTable.receiptNo') }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.receiptTable.receiptDate') }}</TableHead>
-                  <TableHead class="text-right">{{ $t('poLineDetail.receiptTable.receivedQty') }}</TableHead>
+                  <TableHead class="text-right">{{
+                    $t('poLineDetail.receiptTable.receivedQty')
+                  }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.receiptTable.scheduleNo') }}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow v-for="receipt in allReceipts" :key="receipt.id" class="hover:bg-accent/20">
+                <TableRow
+                  v-for="receipt in allReceipts"
+                  :key="receipt.id"
+                  class="hover:bg-accent/20"
+                >
                   <TableCell class="font-medium">{{ receipt.receipt_number }}</TableCell>
                   <TableCell>{{ receipt.received_date }}</TableCell>
-                  <TableCell class="text-right tabular-nums">{{ formatNumber(receipt.received_quantity) }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{
+                    formatNumber(receipt.received_quantity)
+                  }}</TableCell>
                   <TableCell>
                     <Badge variant="outline" class="border-border bg-muted text-muted-foreground">
                       {{ receipt.schedule_no }}
@@ -399,7 +436,10 @@
           <CardDescription>{{ $t('poLineDetail.pullInSubtitle') }}</CardDescription>
         </CardHeader>
         <CardContent class="p-0">
-          <div v-if="line.pull_in_records.length === 0" class="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+          <div
+            v-if="line.pull_in_records.length === 0"
+            class="flex items-center justify-center gap-2 py-12 text-muted-foreground"
+          >
             <TrendingUpDown :size="16" />
             <span>{{ $t('poLineDetail.noPullIn') }}</span>
           </div>
@@ -409,20 +449,32 @@
                 <TableRow class="bg-muted/25 hover:bg-muted/25">
                   <TableHead>{{ $t('poLineDetail.pullInTable.previousDate') }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.pullInTable.targetDate') }}</TableHead>
-                  <TableHead class="text-right">{{ $t('poLineDetail.pullInTable.quantity') }}</TableHead>
+                  <TableHead class="text-right">{{
+                    $t('poLineDetail.pullInTable.quantity')
+                  }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.pullInTable.note') }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.pullInTable.requestedBy') }}</TableHead>
                   <TableHead>{{ $t('poLineDetail.pullInTable.createdAt') }}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow v-for="record in line.pull_in_records" :key="record.id" class="hover:bg-accent/20">
-                  <TableCell class="text-muted-foreground">{{ record.previous_commit_date }}</TableCell>
+                <TableRow
+                  v-for="record in line.pull_in_records"
+                  :key="record.id"
+                  class="hover:bg-accent/20"
+                >
+                  <TableCell class="text-muted-foreground">{{
+                    record.previous_commit_date
+                  }}</TableCell>
                   <TableCell class="font-medium">{{ record.target_date }}</TableCell>
-                  <TableCell class="text-right tabular-nums">{{ formatNumber(record.quantity) }}</TableCell>
+                  <TableCell class="text-right tabular-nums">{{
+                    formatNumber(record.quantity)
+                  }}</TableCell>
                   <TableCell class="max-w-[200px] truncate">{{ record.note || '—' }}</TableCell>
                   <TableCell>{{ record.created_by }}</TableCell>
-                  <TableCell class="text-muted-foreground">{{ record.created_at.slice(0, 10) }}</TableCell>
+                  <TableCell class="text-muted-foreground">{{
+                    record.created_at.slice(0, 10)
+                  }}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
