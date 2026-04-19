@@ -22,7 +22,7 @@ const { isNarrow } = useTheme()
     <AppSidebar />
     <CommandPalette />
 
-    <SidebarInset>
+    <SidebarInset class="w-full min-w-0 overflow-x-hidden">
       <AppHeader />
 
       <div class="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -31,7 +31,7 @@ const { isNarrow } = useTheme()
           Wide mode: override any max-w-* in child view components so
                      content fills the full available width.
         -->
-        <div :class="isNarrow ? 'max-w-4xl mx-auto' : 'layout-wide'">
+        <div :class="[isNarrow ? 'max-w-4xl mx-auto' : 'layout-wide', 'min-w-0 w-full overflow-hidden flex flex-col']">
           <slot />
         </div>
       </div>

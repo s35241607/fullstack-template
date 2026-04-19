@@ -1,4 +1,4 @@
-import { Info, LayoutDashboard, type LucideIcon } from 'lucide-vue-next'
+import { Info, LayoutDashboard, PackageSearch, type LucideIcon } from 'lucide-vue-next'
 
 export interface AppNavItem {
   id: string
@@ -28,6 +28,13 @@ export const appNavGroups: AppNavGroup[] = [
         path: '/',
         icon: LayoutDashboard,
         description: 'nav.desc.home',
+      },
+      {
+        id: 'po-management',
+        name: 'nav.items.poManagement',
+        path: '/po-management',
+        icon: PackageSearch,
+        description: 'nav.desc.poManagement',
       },
     ],
   },

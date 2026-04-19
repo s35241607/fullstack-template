@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂單交期管理 - Notion Style ERP</title>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        notion: {
+                            bg: '#191919',
+                            hover: '#252525',
+                            text: '#D4D4D4',
+                            muted: '#9B9A97',
+                            border: '#2F3336',
+                            blue: '#2383E2',
+                            tag: {
+                                green: { bg: 'rgba(46, 170, 110, 0.2)', text: '#43c87f' },
+                                blue: { bg: 'rgba(35, 131, 226, 0.2)', text: '#529be5' },
+                                purple: { bg: 'rgba(154, 109, 215, 0.2)', text: '#b388eb' },
+                                brown: { bg: 'rgba(212, 115, 53, 0.2)', text: '#e58e55' },
+                                yellow: { bg: 'rgba(235, 195, 71, 0.2)', text: '#f2c94c' },
+                                red: { bg: 'rgba(235, 87, 87, 0.2)', text: '#eb5757' },
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #191919; border-left: 1px solid #2F3336; border-top: 1px solid #2F3336; }
+        ::-webkit-scrollbar-thumb { background: #474C50; border-radius: 5px; border: 2px solid #191919; }
+        ::-webkit-scrollbar-thumb:hover { background: #5C6266; }
+
+        body { background-color: #191919; color: #D4D4D4; color-scheme: dark; overflow: hidden; }
+
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .slide-up-enter-active, .slide-up-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translate(-50%, 20px); }
+        .dropdown-enter-active, .dropdown-leave-active { transition: all 0.15s ease; }
+        .dropdown-enter-from, .dropdown-leave-to { opacity: 0; transform: translateY(-5px); }
+
+        /* ==========================================================================
+           🌟 修復重疊破圖的核心：嚴謹的 Table Sticky CSS 結構
+           ========================================================================== */
+        table { 
+            border-collapse: separate; 
+            border-spacing: 0; 
+            min-width: 1400px; 
+            width: 100%;
+        }
+
+        th, td { padding: 0; border: none; }
+        
+        /* 1. Header 列：鎖定 Top */
+        th { 
+            position: sticky; 
+            top: 0; 
+            z-index: 20; 
+            background-color: #191919; 
+            border-bottom: 1px solid #2F3336; 
+        }
+
+        /* 2. 第一欄：Checkbox (鎖定 Left) */
+        .sticky-col-1 { 
+            position: sticky; 
+            left: 0; 
+            width: 48px; min-width: 48px; max-width: 48px; 
+            z-index: 10; 
+            background-color: inherit; 
+        }
+        th.sticky-col-1 { z-index: 30; background-color: #191919; }
+
+        /* 3. 第二欄：訂單號/明細號 (鎖定 Left) */
+        .sticky-col-2 { 
+            position: sticky; 
+            left: 48px; 
+            width: 280px; min-width: 280px; max-width: 280px; 
+            z-index: 10; 
+            background-color: inherit; 
+            border-right: 1px solid #2F3336; 
+        }
+        th.sticky-col-2 { z-index: 30; background-color: #191919; }
+
+        /* 4. 行列 Hover 的背景色繼承邏輯 */
+        tbody tr { background-color: #191919; transition: background-color 0.15s ease; }
+        tbody tr:hover { background-color: #252525; }
+        tbody tr.table-row-selected { background-color: #252525; }
+        tbody tr.table-row-expanded { background-color: #1A1A1A; }
+        
+        tbody tr.group-header { background-color: #222222; }
+        tbody tr.group-header:hover { background-color: #2A2A2A; }
+
+        /* 儲存格底線 */
+        tbody td { border-bottom: 1px solid #2F3336; }
+    </style>
+</head>
+<body class="antialiased h-screen flex flex-col p-6">
+    <div id="app" class="max-w-[1800px] w-full mx-auto flex flex-col h-full relative">
+        <!-- Header 區塊 -->
+        <header class="flex-shrink-0 mb-4">
+            <div class="flex items-center gap-2 mb-4">
+                <i data-lucide="truck" class="w-6 h-6 text-notion-text"></i>
+                <h2 class="text-xl font-semibold text-white">ERP 訂單交期管理</h2>
+                <span class="text-notion-muted text-sm font-normal ml-2 bg-[#2C2C2C] px-2 py-0.5 rounded-full flex items-center gap-1">
+                    {{ processedOrders.length }} 筆明細
+                    <span v-if="processedOrders.length !== orders.length" class="text-[10px] opacity-60 bg-[#191919] px-1 rounded">總共 {{ orders.length }}</span>
+                </span>
+            </div>
+
+            <!-- Tabs & Filters -->
+            <div class="flex items-center justify-between border-b border-notion-border pb-2">
+                <div class="flex items-center gap-1 text-sm text-notion-muted">
+                    <button class="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-notion-hover bg-notion-hover text-notion-text transition-colors">
+                        <i data-lucide="table" class="w-4 h-4"></i> 列表檢視
+                    </button>
+                    <button class="flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-notion-hover transition-colors">
+                        <i data-lucide="calendar" class="w-4 h-4"></i> 交期行事曆
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-2 text-notion-muted">
+                    <div class="relative flex items-center bg-[#252525] rounded-md px-2 py-1 border border-transparent focus-within:border-notion-border focus-within:bg-[#1A1A1A] transition-colors">
+                        <i data-lucide="search" class="w-4 h-4 text-notion-muted"></i>
+                        <input type="text" v-model="searchQuery" placeholder="搜尋訂單、產品..." class="bg-transparent border-none outline-none text-sm text-notion-text w-48 ml-2 placeholder-notion-muted">
+                        <button v-if="searchQuery" @click="searchQuery = ''" class="text-notion-muted hover:text-white ml-1"><i data-lucide="x" class="w-3 h-3"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters & Grouping Bar -->
+            <div class="flex items-center gap-3 mt-4 text-sm relative h-8">
+                <!-- Group By Toggle -->
+                <div class="relative" ref="groupDropdownWrapper">
+                    <button @click="showGroupMenu = !showGroupMenu" class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors" :class="groupBy !== 'none' ? 'text-notion-blue bg-notion-blue/10 hover:bg-notion-blue/20' : 'hover:bg-notion-hover'">
+                        <i data-lucide="layers" class="w-4 h-4"></i> 
+                        {{ groupOptions.find(o => o.value === groupBy)?.label || '無分組' }}
+                        <i data-lucide="chevron-down" class="w-3 h-3 opacity-70"></i>
+                    </button>
+                    <transition name="dropdown">
+                        <div v-if="showGroupMenu" class="absolute left-0 mt-1 w-48 bg-[#252525] border border-notion-border rounded-lg shadow-xl z-50 py-1">
+                            <div class="px-3 py-1.5 text-xs font-semibold text-notion-muted uppercase tracking-wider">分組依據</div>
+                            <button v-for="opt in groupOptions" :key="opt.value" @click="setGroupBy(opt.value)" class="w-full text-left px-3 py-1.5 text-sm hover:bg-notion-hover flex items-center justify-between text-notion-text">
+                                {{ opt.label }}
+                                <i v-if="groupBy === opt.value" data-lucide="check" class="w-3.5 h-3.5 text-notion-blue"></i>
+                            </button>
+                        </div>
+                    </transition>
+                </div>
+
+                <!-- 🌟 批次收合/展開控制列 -->
+                <div class="flex items-center gap-1 border-l border-notion-border pl-3">
+                    <button v-if="groupBy !== 'none'" @click="toggleAllGroups" class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-notion-muted hover:bg-notion-hover hover:text-white" title="收合/展開外層群組">
+                        <i data-lucide="folders" class="w-3.5 h-3.5"></i>
+                        {{ isAllGroupsCollapsed ? '展開群組' : '收合群組' }}
+                    </button>
+                    <button @click="toggleAllDetails" class="flex items-center gap-1.5 px-2 py-1.5 rounded transition-colors text-notion-muted hover:bg-notion-hover hover:text-white" title="一次性收合/展開所有子表格明細">
+                        <i data-lucide="list-tree" class="w-3.5 h-3.5"></i>
+                        {{ isAllDetailsCollapsed ? '展開明細' : '收合明細' }}
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Table Container (Virtual Scroller) -->
+        <div class="flex-1 overflow-auto border border-notion-border rounded-lg relative bg-[#191919]" @scroll="handleScroll">
+            <table>
+                <!-- Table Header -->
+                <thead>
+                    <tr class="text-sm text-notion-muted">
+                        <th class="py-2.5 px-3 font-normal sticky-col-1 text-center">
+                            <input type="checkbox" :checked="isAllSelected" :indeterminate.prop="isIndeterminate" @change="toggleSelectAll" class="rounded border border-notion-border bg-[#191919] text-notion-blue focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer">
+                        </th>
+                        <th class="py-2.5 px-3 font-normal sticky-col-2">
+                            <div class="flex items-center gap-1.5"><span class="font-serif italic text-xs">Aa</span> 訂單號 / 明細號</div>
+                        </th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[150px]">供應商</th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[120px]">訂單日期</th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[140px]">預計交期</th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[140px]">交期狀態</th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[250px]">產品名稱</th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[120px] text-right">訂單數量</th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-[120px] text-right">已收數量</th>
+                        <th class="py-2.5 px-3 font-normal whitespace-nowrap w-12 text-center">操作</th>
+                    </tr>
+                </thead>
+                
+                <!-- Table Body -->
+                <tbody class="text-sm relative">
+                    <!-- Top Padding -->
+                    <tr v-if="virtualState.paddingTop > 0" :style="{ height: virtualState.paddingTop + 'px' }">
+                        <td colspan="10" class="p-0 border-none bg-transparent"></td>
+                    </tr>
+
+                    <!-- 僅渲染可見範圍內的列 -->
+                    <template v-for="row in virtualState.visibleItems" :key="row.id">
+                        
+                        <!-- 類型 1: Group Header -->
+                        <tr v-if="row.type === 'group'" class="cursor-pointer select-none group-header" @click="toggleGroup(row.data.key)">
+                            <td colspan="10" class="p-0 bg-inherit">
+                                <div class="sticky left-0 flex items-center gap-2 py-2.5 px-4 w-max text-white">
+                                    <i data-lucide="chevron-right" class="w-4 h-4 text-notion-muted transition-transform duration-200" :class="{'rotate-90': groupExpanded[row.data.key]}"></i>
+                                    <i v-if="groupBy === 'orderNo'" data-lucide="file-text" class="w-4 h-4 text-notion-blue"></i>
+                                    <i v-if="groupBy === 'supplier'" data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i>
+                                    <span class="text-base font-medium">{{ row.data.title }}</span>
+                                    <span class="text-notion-muted text-xs font-normal ml-2">{{ row.data.items.length }} 筆明細</span>
+                                    <span v-if="groupBy === 'orderNo'" class="ml-4 text-xs text-notion-muted bg-[#1A1A1A] px-2 py-0.5 rounded border border-notion-border">
+                                        總量: {{ row.data.items.reduce((sum, item) => sum + item.quantity, 0).toLocaleString() }}
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- 類型 2: Item Row -->
+                        <template v-else-if="row.type === 'item'">
+                            <tr class="group/row" :class="{'table-row-selected': row.data.expanded || selectedMap[row.data.id]}">
+                                <td class="py-2 px-3 align-top sticky-col-1 text-center">
+                                    <input type="checkbox" :checked="selectedMap[row.data.id]" @change="toggleSelect(row.data.id)" class="rounded border border-notion-border bg-[#191919] text-notion-blue focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5 cursor-pointer mt-0.5 transition-all">
+                                </td>
+                                <td class="py-2 px-3 align-top sticky-col-2">
+                                    <div class="flex items-center gap-1.5" :class="{'pl-4': groupBy !== 'none'}">
+                                        <button @click="toggleRow(row.data.id)" class="p-0.5 rounded hover:bg-neutral-700 text-notion-muted flex-shrink-0 transition-transform duration-200" :class="{'rotate-90': row.data.expanded}">
+                                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                        </button>
+                                        <div class="flex flex-col">
+                                            <span class="font-medium text-notion-text flex items-center gap-1">
+                                                <i data-lucide="file-box" class="w-3.5 h-3.5 text-notion-muted"></i> {{ row.data.lineId }}
+                                            </span>
+                                            <span v-if="groupBy !== 'orderNo'" class="text-[10px] text-notion-muted mt-0.5 ml-4">{{ row.data.orderNo }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-3 align-top whitespace-nowrap">
+                                    <span class="px-2 py-0.5 rounded text-xs" :style="{ backgroundColor: row.data.supplier.bg, color: row.data.supplier.text }">{{ row.data.supplier.name }}</span>
+                                </td>
+                                <td class="py-2 px-3 align-top text-notion-text">{{ row.data.orderDate }}</td>
+                                <td class="py-2 px-3 align-top text-notion-text font-medium flex items-center gap-1.5">
+                                    {{ row.data.expectedDate }}
+                                    <span v-if="row.data.isExpedite" title="急件" class="text-[10px] bg-notion-tag-red-bg text-notion-tag-red-text px-1 rounded flex items-center gap-0.5">
+                                        🔥 急
+                                    </span>
+                                </td>
+                                <td class="py-2 px-3 align-top">
+                                    <div class="flex flex-col items-start gap-1">
+                                        <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs" :style="{ backgroundColor: row.data.status.bg, color: row.data.status.text }">
+                                            <div class="w-1.5 h-1.5 rounded-full" :class="row.data.status.dotClass"></div>
+                                            {{ row.data.status.label }}
+                                        </div>
+                                        <span v-if="row.data.status.label === '延遲'" class="text-[10px] text-red-400 ml-1 font-medium bg-red-900/20 px-1 rounded">
+                                            +{{ row.data.delayDays }} days
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="py-2 px-3 align-top text-notion-text">
+                                    <div class="truncate max-w-[220px]" :title="row.data.productName">{{ row.data.productName }}</div>
+                                </td>
+                                <td class="py-2 px-3 align-top text-right text-notion-text font-medium">
+                                    {{ row.data.quantity.toLocaleString() }} <span class="text-[10px] text-notion-muted font-normal">{{ row.data.uom }}</span>
+                                </td>
+                                <td class="py-2 px-3 align-top text-right text-notion-text">
+                                    {{ row.data.receivedQuantity.toLocaleString() }} <span class="text-[10px] text-notion-muted">{{ row.data.uom }}</span>
+                                </td>
+                                <td class="py-2 px-3 align-top text-center">
+                                    <button @click="toggleRow(row.data.id)" class="opacity-0 group-hover/row:opacity-100 text-notion-muted hover:text-white p-1 rounded transition-all">
+                                        <i data-lucide="settings-2" class="w-4 h-4"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            
+                            <!-- 類型 3: Expanded Content -->
+                            <tr v-if="row.data.expanded" class="table-row-expanded">
+                                <!-- 🌟 完美解法：使用 colspan="10" 橫跨整列，移除原本多餘的空白 Sticky 欄位 -->
+                                <td colspan="10" class="p-0 align-top border-b border-notion-border/50 relative">
+                                    <!-- 🌟 將內部容器釘在最左側 (left-0)，並給予 pl-[68px] 內縮，與上方的 checkbox / 標題對齊 -->
+                                    <div class="sticky left-0 py-4 pl-[68px] pr-6 flex gap-8 w-max">
+                                        
+                                        <!-- 交期拆分計畫 -->
+                                        <div class="flex-1 w-[350px]">
+                                            <div class="flex items-center gap-2 mb-3 text-sm font-medium text-notion-muted">
+                                                <i data-lucide="git-pull-request" class="w-4 h-4 text-notion-blue"></i> 交期拆分計畫
+                                            </div>
+                                            <div class="border border-notion-border rounded-lg overflow-hidden bg-[#1A1A1A]">
+                                                <table class="w-full text-left text-sm min-w-full">
+                                                    <thead class="bg-[#2C2C2C] text-notion-muted">
+                                                        <tr><th class="py-2 px-3 font-normal w-[140px] !static">預定到貨日</th><th class="py-2 px-3 font-normal text-right !static">預計數量</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-for="split in row.data.splits" :key="split.id">
+                                                            <td class="py-2 px-3 text-notion-text border-b border-notion-border/50"><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1.5 text-notion-muted"></i>{{ split.date }}</td>
+                                                            <td class="py-2 px-3 text-right text-notion-text font-medium border-b border-notion-border/50">{{ split.qty.toLocaleString() }} <span class="text-[10px] text-notion-muted">{{ row.data.uom }}</span></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 詳細收料紀錄 -->
+                                        <div class="flex-1 w-[400px]">
+                                            <div class="flex items-center gap-2 mb-3 text-sm font-medium text-notion-muted">
+                                                <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-400"></i> 詳細收料紀錄
+                                            </div>
+                                            <div class="border border-notion-border rounded-lg overflow-hidden bg-[#1A1A1A]">
+                                                <table class="w-full text-left text-sm min-w-full">
+                                                    <thead class="bg-[#2C2C2C] text-notion-muted">
+                                                        <tr><th class="py-2 px-3 font-normal !static">收料日期</th><th class="py-2 px-3 font-normal text-right !static">實收數量</th><th class="py-2 px-3 font-normal !static">驗收單號</th></tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr v-if="row.data.records.length === 0"><td colspan="3" class="py-4 px-3 text-center text-notion-muted text-xs italic border-b border-notion-border/50">尚無收料紀錄</td></tr>
+                                                        <tr v-for="rec in row.data.records" :key="rec.docNo">
+                                                            <td class="py-2 px-3 text-notion-text border-b border-notion-border/50"><i data-lucide="calendar-check" class="w-3.5 h-3.5 inline mr-1.5 text-notion-muted"></i>{{ rec.date }}</td>
+                                                            <td class="py-2 px-3 text-right text-notion-text font-medium border-b border-notion-border/50">{{ rec.qty.toLocaleString() }}</td>
+                                                            <td class="py-2 px-3 text-notion-muted border-b border-notion-border/50"><i data-lucide="file-check" class="w-3.5 h-3.5 inline mr-1 text-notion-muted"></i>{{ rec.docNo }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </template>
+
+                    <!-- Bottom Padding -->
+                    <tr v-if="virtualState.paddingBottom > 0" :style="{ height: virtualState.paddingBottom + 'px' }">
+                        <td colspan="10" class="p-0 border-none bg-transparent"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 懸浮批次操作列 -->
+        <transition name="slide-up">
+            <div v-if="selectedCount > 0" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#2C2C2C] border border-notion-border shadow-2xl shadow-black/50 rounded-full px-6 py-3 flex items-center gap-5 z-50">
+                <div class="flex items-center gap-2">
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full bg-notion-blue text-xs font-bold text-white">{{ selectedCount }}</span>
+                    <span class="text-sm text-white font-medium">筆明細已選取</span>
+                </div>
+                <div class="w-px h-5 bg-[#474C50]"></div>
+                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> 批次催料</button>
+                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="calendar-clock" class="w-4 h-4 text-orange-400"></i> Push Out (遞延)</button>
+                <button class="text-sm text-notion-text hover:text-white flex items-center gap-1.5 transition-colors"><i data-lucide="download" class="w-4 h-4 text-notion-blue"></i> 匯出 Excel</button>
+                <div class="w-px h-5 bg-[#474C50]"></div>
+                <button @click="clearSelection" class="text-sm text-notion-muted hover:text-red-400 transition-colors flex items-center gap-1"><i data-lucide="x-circle" class="w-4 h-4"></i> 取消</button>
+            </div>
+        </transition>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+        const tags = {
+            supplierA: { name: '德州儀器 (TI)', bg: 'rgba(35, 131, 226, 0.2)', text: '#529be5' },
+            supplierB: { name: '台積電 (TSMC)', bg: 'rgba(46, 170, 110, 0.2)', text: '#43c87f' },
+            supplierC: { name: '日月光 (ASE)', bg: 'rgba(154, 109, 215, 0.2)', text: '#b388eb' },
+            supplierD: { name: '鴻海 (Foxconn)', bg: 'rgba(212, 115, 53, 0.2)', text: '#e58e55' },
+        };
+
+        const statuses = {
+            producing: { label: '生產中', bg: 'rgba(35, 131, 226, 0.15)', text: '#7ab4ed', dotClass: 'bg-blue-400' },
+            received: { label: '部分收料', bg: 'rgba(235, 195, 71, 0.15)', text: '#f2c94c', dotClass: 'bg-yellow-400' },
+            delayed: { label: '延遲', bg: 'rgba(212, 115, 53, 0.15)', text: '#e58e55', dotClass: 'bg-orange-500' },
+            completed: { label: '已完成', bg: 'rgba(46, 170, 110, 0.15)', text: '#43c87f', dotClass: 'bg-green-500' },
+        };
+
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // --- Data Generator ---
+        const generateMockOrders = (count) => {
+            const suppliers = Object.values(tags);
+            const statusValues = Object.values(statuses);
+            const products = ['MCU-32 微控制器', 'PMIC 電源管理晶片', '高頻電感 10uH', '散熱模組 (銅底)', 'MLCC 0402 被動元件'];
+            const uoms = ['pcs', 'reel', 'kg', 'set'];
+            
+            const results = [];
+            let poIndex = 1;
+            const today = new Date('2026-04-18');
+
+            for (let i = 1; i <= count; i++) {
+                if (i % 5 === 0) poIndex++;
+                const orderNo = `PO-2026-${String(poIndex).padStart(4, '0')}`;
+                
+                const qty = Math.floor(Math.random() * 5000) + 100;
+                const rcvQty = Math.floor(Math.random() * qty);
+                const sup = suppliers[Math.floor(Math.random() * suppliers.length)];
+                
+                const expDate = new Date(today);
+                const dayDiff = Math.floor(Math.random() * 40) - 10;
+                expDate.setDate(today.getDate() + dayDiff); 
+                const dateStr = expDate.toISOString().split('T')[0];
+
+                const stat = statusValues[Math.floor(Math.random() * statusValues.length)];
+                const isLate = stat.label === '延遲' && dayDiff < 0;
+                const delayDays = isLate ? Math.abs(dayDiff) : 0;
+                const isExpedite = dayDiff >= 0 && dayDiff <= 7 && stat.label !== '已完成';
+
+                // 模擬 1-3 筆歷史紀錄
+                const recordsCount = rcvQty > 0 ? Math.floor(Math.random() * 3) + 1 : 0;
+                const records = [];
+                let remQty = rcvQty;
+                for(let j=0; j<recordsCount; j++) {
+                    const alloc = j === recordsCount - 1 ? remQty : Math.floor(remQty / 2);
+                    if(alloc > 0) {
+                        records.push({ date: '2026-04-15', qty: alloc, docNo: `RCV-${Math.floor(Math.random()*9000)+1000}` });
+                        remQty -= alloc;
+                    }
+                }
+
+                results.push({
+                    id: generateId(), orderNo, lineId: `${orderNo}-${String((i%5)+1).padStart(2, '0')}`, 
+                    supplier: sup, orderDate: '2026-04-01', expectedDate: dateStr,
+                    status: stat, delayDays, isExpedite,
+                    productName: products[Math.floor(Math.random() * products.length)],
+                    quantity: qty, receivedQuantity: rcvQty, uom: uoms[Math.floor(Math.random() * uoms.length)],
+                    expanded: false,
+                    splits: [{ id: generateId(), date: dateStr, qty: qty }],
+                    records: records
+                });
+            }
+            return results;
+        };
+
+        createApp({
+            setup() {
+                const orders = ref(generateMockOrders(500));
+
+                // --- Search & Filtering ---
+                const searchQuery = ref('');
+                const processedOrders = computed(() => {
+                    let result = orders.value;
+                    if (searchQuery.value.trim()) {
+                        const q = searchQuery.value.toLowerCase().trim();
+                        result = result.filter(o => o.orderNo.toLowerCase().includes(q) || o.lineId.toLowerCase().includes(q) || o.productName.toLowerCase().includes(q));
+                    }
+                    return result;
+                });
+
+                // --- Grouping ---
+                const groupBy = ref('orderNo'); 
+                const showGroupMenu = ref(false);
+                const groupExpanded = ref({}); 
+                const groupOptions = [
+                    { label: '依訂單編號 (Header)', value: 'orderNo' },
+                    { label: '依供應商 (Supplier)', value: 'supplier' },
+                    { label: '不分組 (扁平顯示)', value: 'none' }
+                ];
+
+                const setGroupBy = (type) => {
+                    groupBy.value = type;
+                    showGroupMenu.value = false;
+                    groupExpanded.value = {}; 
+                    nextTick(() => {
+                        groupedOrders.value.slice(0, 5).forEach(g => groupExpanded.value[g.key] = true);
+                        lucide.createIcons();
+                    });
+                };
+
+                const toggleGroup = (key) => {
+                    groupExpanded.value[key] = !groupExpanded.value[key];
+                    nextTick(() => lucide.createIcons());
+                };
+
+                const groupedOrders = computed(() => {
+                    if (groupBy.value === 'none') {
+                        groupExpanded.value['all'] = true; 
+                        return [{ key: 'all', title: '所有明細', items: processedOrders.value }];
+                    }
+                    const groups = {};
+                    processedOrders.value.forEach(order => {
+                        let key = groupBy.value === 'orderNo' ? order.orderNo : order.supplier.name;
+                        let title = groupBy.value === 'orderNo' ? `訂單: ${order.orderNo}` : order.supplier.name;
+                        if (!groups[key]) groups[key] = { key, title, items: [] };
+                        groups[key].items.push(order);
+                    });
+                    return Object.values(groups).sort((a, b) => a.key.localeCompare(b.key));
+                });
+
+                const toggleRow = (id) => {
+                    const order = orders.value.find(o => o.id === id);
+                    if (order) order.expanded = !order.expanded;
+                    nextTick(() => lucide.createIcons());
+                };
+
+                // --- 全局收合/展開邏輯 ---
+                const isAllGroupsCollapsed = computed(() => Object.values(groupExpanded.value).filter(Boolean).length === 0);
+                const isAllDetailsCollapsed = computed(() => orders.value.every(o => !o.expanded));
+
+                const toggleAllGroups = () => {
+                    const targetState = isAllGroupsCollapsed.value;
+                    const newState = {};
+                    if (targetState) { groupedOrders.value.forEach(g => newState[g.key] = true); }
+                    groupExpanded.value = newState;
+                    nextTick(() => lucide.createIcons());
+                };
+
+                const toggleAllDetails = () => {
+                    const targetState = isAllDetailsCollapsed.value;
+                    orders.value.forEach(o => o.expanded = targetState);
+                    nextTick(() => lucide.createIcons());
+                };
+
+                // --- 自定義扁平化虛擬滾動 (Flat Virtual Scroller) ---
+                const scrollTop = ref(0);
+                const handleScroll = (e) => { scrollTop.value = e.target.scrollTop; };
+
+                const flatList = computed(() => {
+                    const list = [];
+                    groupedOrders.value.forEach(group => {
+                        if (groupBy.value !== 'none') list.push({ id: `g-${group.key}`, type: 'group', data: group });
+                        if (groupExpanded.value[group.key]) {
+                            group.items.forEach(order => {
+                                list.push({ id: order.id, type: 'item', data: order });
+                            });
+                        }
+                    });
+                    return list;
+                });
+
+                // 動態計算精確高度
+                const getItemHeight = (row) => {
+                    if (row.type === 'group') return 45;
+                    if (row.type === 'item') {
+                        if (!row.data.expanded) return 53;
+                        const maxRows = Math.max(row.data.splits?.length || 1, row.data.records?.length || 1);
+                        const tableHeight = 36 + (maxRows * 37); 
+                        return 53 + 32 + 32 + tableHeight + 20; 
+                    }
+                    return 50;
+                };
+
+                const positions = computed(() => {
+                    let pos = 0;
+                    const posArray = [];
+                    const list = flatList.value;
+                    for (let i = 0; i < list.length; i++) {
+                        posArray.push(pos);
+                        pos += getItemHeight(list[i]);
+                    }
+                    return { positions: posArray, totalHeight: pos };
+                });
+
+                const virtualState = computed(() => {
+                    const st = scrollTop.value;
+                    const posArr = positions.value.positions;
+                    const total = posArr.length;
+                    if(total === 0) return { visibleItems: [], paddingTop: 0, paddingBottom: 0 };
+
+                    let start = 0, low = 0, high = total - 1;
+                    while(low <= high) {
+                        let mid = Math.floor((low + high) / 2);
+                        if (posArr[mid] <= st) { start = mid; low = mid + 1; } 
+                        else { high = mid - 1; }
+                    }
+
+                    start = Math.max(0, start - 5);
+                    let end = start;
+                    const clientHeight = 1200; 
+                    while (end < total && posArr[end] < st + clientHeight + 800) end++;
+                    end = Math.min(total, end + 5);
+
+                    return {
+                        visibleItems: flatList.value.slice(start, end),
+                        paddingTop: start > 0 ? posArr[start] : 0,
+                        paddingBottom: end < total ? positions.value.totalHeight - posArr[end] : 0
+                    };
+                });
+
+                // --- 批次操作 ---
+                const selectedMap = ref({});
+                const selectedCount = computed(() => Object.values(selectedMap.value).filter(Boolean).length);
+                const selectableIds = computed(() => processedOrders.value.map(o => o.id));
+                const isAllSelected = computed(() => selectableIds.value.length > 0 && selectedCount.value === selectableIds.value.length);
+                const isIndeterminate = computed(() => selectedCount.value > 0 && selectedCount.value < selectableIds.value.length);
+
+                const toggleSelect = (id) => { selectedMap.value[id] = !selectedMap.value[id]; };
+                const toggleSelectAll = (e) => {
+                    const isChecked = e.target.checked;
+                    const newMap = { ...selectedMap.value };
+                    selectableIds.value.forEach(id => { newMap[id] = isChecked; });
+                    selectedMap.value = newMap;
+                };
+                const clearSelection = () => { selectedMap.value = {}; };
+                
+                const groupDropdownWrapper = ref(null);
+                const handleClickOutside = (event) => {
+                    if (groupDropdownWrapper.value && !groupDropdownWrapper.value.contains(event.target)) {
+                        showGroupMenu.value = false;
+                    }
+                };
+
+                onMounted(() => {
+                    setGroupBy('orderNo');
+                    document.addEventListener('click', handleClickOutside);
+                });
+
+                return {
+                    orders, processedOrders, searchQuery,
+                    groupBy, showGroupMenu, groupOptions, setGroupBy, groupedOrders, groupExpanded, 
+                    toggleGroup, toggleRow, isAllGroupsCollapsed, isAllDetailsCollapsed, toggleAllGroups, toggleAllDetails, groupDropdownWrapper,
+                    handleScroll, virtualState,
+                    selectedMap, selectedCount, isAllSelected, isIndeterminate, toggleSelect, toggleSelectAll, clearSelection
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import AppLayout from '@/components/layout/AppLayout.vue'
-  import AlertDialog from '@/components/ui/alert-dialog/AlertDialog.vue'
+  import ConfirmDialog from '@/components/layout/ConfirmDialog.vue'
   import { Toaster } from '@/components/ui/sonner'
   import { useDark } from '@vueuse/core'
   import { computed, watch } from 'vue'
@@ -33,7 +33,7 @@
   />
 
   <!-- Global confirmation modal — driven by the useConfirm() singleton -->
-  <AlertDialog />
+  <ConfirmDialog />
 
   <AppLayout>
     <RouterView v-slot="{ Component }">

@@ -1,5 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { h } from 'vue'
+import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
+
+const PassThrough = { render: () => h(RouterView) }
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,6 +18,36 @@ const router = createRouter({
       name: 'about',
       component: () => import('@/views/AboutView.vue'),
       meta: { breadcrumb: 'nav.items.about' },
+    },
+    {
+      path: '/po-management',
+      component: PassThrough,
+      meta: { breadcrumb: 'nav.items.poManagement' },
+      children: [
+        {
+          path: '',
+          name: 'po-management',
+          component: () => import('@/views/orders/PoManagementView.vue'),
+        },
+        {
+          path: ':orderId',
+          component: PassThrough,
+          meta: { breadcrumbParam: 'orderId' },
+          children: [
+            {
+              path: '',
+              name: 'po-detail',
+              component: () => import('@/views/orders/PoDetailView.vue'),
+            },
+            {
+              path: 'lines/:lineId',
+              name: 'po-line-detail',
+              component: () => import('@/views/orders/PoLineDetailView.vue'),
+              meta: { breadcrumbParam: 'lineId', breadcrumbPrefix: 'poDetail.linePrefix' },
+            },
+          ],
+        },
+      ],
     },
   ],
 })
