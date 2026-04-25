@@ -1,4 +1,4 @@
-import { Info, LayoutDashboard, PackageSearch, type LucideIcon } from 'lucide-vue-next'
+import { Info, LayoutDashboard, PackageSearch, Shapes, type LucideIcon } from 'lucide-vue-next'
 
 export interface AppNavItem {
   id: string
@@ -48,6 +48,13 @@ export const appNavGroups: AppNavGroup[] = [
         path: '/about',
         icon: Info,
         description: 'nav.desc.about',
+      },
+      {
+        id: 'demo',
+        name: 'Demo 展示',
+        path: '/demo',
+        icon: Shapes,
+        description: '共用元件展示頁面',
       },
     ],
   },

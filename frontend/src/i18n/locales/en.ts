@@ -58,6 +58,56 @@ const en = {
     },
   },
 
+  demo: {
+    title: 'Component Gallery',
+    subtitle: 'Reusable UI components built with shadcn-vue, Vue 3, and TypeScript.',
+    tabs: {
+      selection: 'Selection',
+      table: 'Data Table',
+    },
+    select: {
+      title: 'Select — Standard Dropdown',
+      desc: 'Wraps shadcn Select with support for disabled items, avatars, and descriptions.',
+      basicLabel: 'Basic Select',
+      richLabel: 'Rich Select (Avatar)',
+      placeholder: 'Select priority...',
+      richPlaceholder: 'Select assignee...',
+    },
+    autoComplete: {
+      title: 'AutoComplete — Searchable Select',
+      desc: 'Popover + Command searchable dropdown menu.',
+      label: 'Project',
+      placeholder: 'Select project...',
+      searchPlaceholder: 'Search...',
+    },
+    comboBox: {
+      title: 'ComboBox — Input Combo',
+      desc: 'Input custom text or select from list, supports adding new options.',
+      label: 'Tag',
+      placeholder: 'Input or select tag...',
+      newTags: 'Newly created tags:',
+    },
+    table: {
+      simpleTitle: 'Simple Table',
+      simpleDesc: 'Wraps shadcn Table, supports custom cell slots.',
+      advancedTitle: 'Advanced Table — Notion Style',
+      advancedDesc: 'Sorting, frozen columns, grouping, inline edit, drag-to-reorder, checkbox, keyboard nav, search.',
+      simulateLoading: 'Simulate Loading',
+      editLog: 'Edit History',
+      features: {
+        nav: 'Arrows Nav',
+        click: 'Click Focus',
+        edit: 'Enter/F2 Edit',
+        check: 'Space Check',
+        copy: 'Ctrl+C Copy',
+        sort: 'Click Header Sort',
+        reorderCol: 'Drag Header Move',
+        reorderRow: 'Drag Row Move',
+        resize: 'Drag Edge Resize',
+      },
+    },
+  },
+
   home: {
     title: 'Fullstack Template',
     subtitle: 'Vue 3 + TypeScript + FastAPI + SQLAlchemy',

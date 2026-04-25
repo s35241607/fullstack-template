@@ -60,6 +60,56 @@ const zhTW: MessageSchema = {
     },
   },
 
+  demo: {
+    title: '共用元件展示',
+    subtitle: '使用 shadcn-vue 原生元件封裝，符合 Vue 3 + TypeScript 規範。',
+    tabs: {
+      selection: '選擇器',
+      table: '資料表格',
+    },
+    select: {
+      title: 'Select — 標準下拉',
+      desc: '封裝 shadcn Select，支援 disabled / avatar / description。',
+      basicLabel: '基礎下拉',
+      richLabel: '豐富內容 (頭像)',
+      placeholder: '選擇優先級…',
+      richPlaceholder: '選擇負責人…',
+    },
+    autoComplete: {
+      title: 'AutoComplete — 搜尋選擇',
+      desc: 'Popover + Command 可搜尋的下拉選單。',
+      label: '專案項目',
+      placeholder: '選擇專案…',
+      searchPlaceholder: '搜尋…',
+    },
+    comboBox: {
+      title: 'ComboBox — 可輸入組合框',
+      desc: '輸入自定義文字或從清單選取，支援新增自定義選項。',
+      label: '標籤管理',
+      placeholder: '輸入或選擇標籤…',
+      newTags: '新建立的標籤：',
+    },
+    table: {
+      simpleTitle: '簡易表格',
+      simpleDesc: '封裝 shadcn Table，支援自定義 cell slot。',
+      advancedTitle: '高級表格 — Notion 風格',
+      advancedDesc: '排序、凍結欄位、群組、行內編輯、欄位/行拖曳換位、勾選、鍵盤導覽、搜尋。',
+      simulateLoading: '模擬 Loading',
+      editLog: '編輯記錄',
+      features: {
+        nav: '↑↓←→ 導覽',
+        click: '點擊定位',
+        edit: 'Enter/F2 編輯',
+        check: 'Space 勾選',
+        copy: 'Ctrl+C 複製',
+        sort: '點擊標題排序',
+        reorderCol: '拖曳標題換位',
+        reorderRow: '拖曳行換位',
+        resize: '拖曳邊緣調寬',
+      },
+    },
+  },
+
   home: {
     title: '全端開發範本',
     subtitle: 'Vue 3 + TypeScript + FastAPI + SQLAlchemy',
