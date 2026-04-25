@@ -39,7 +39,7 @@
 </script>
 
 <template>
-  <Popover>
+  <Popover :modal="false">
     <PopoverTrigger as-child>
       <!-- Bell icon: 移除 h-4 w-4，Button icon-sm 基底 [&_svg]:size-4 已覆蓋 -->
       <Button variant="ghost" size="icon-sm" class="relative" aria-label="Notifications">

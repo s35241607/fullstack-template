@@ -16,3 +16,8 @@ app.use(createPinia())
 app.use(i18n)
 app.use(router)
 app.mount('#app')
+document.body.classList.add('app-loaded')
+setTimeout(() => {
+  const loader = document.getElementById('loading-screen')
+  if (loader) loader.remove()
+}, 300)

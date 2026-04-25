@@ -23,7 +23,7 @@
   <Tooltip>
     <TooltipTrigger as-child>
       <div>
-        <DropdownMenu>
+        <DropdownMenu :modal="false">
           <DropdownMenuTrigger as-child>
             <Button variant="ghost" size="icon-sm" aria-label="Switch language">
               <Globe />

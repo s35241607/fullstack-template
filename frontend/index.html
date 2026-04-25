@@ -5,8 +5,55 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MyApp</title>
+    <script>
+      (function() {
+        const theme = localStorage.getItem('vueuse-color-scheme') || 'auto';
+        const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      })();
+    </script>
+    <style>
+      :root {
+        --loading-bg: #ffffff;
+        --loading-spinner: #0f172a;
+      }
+      .dark {
+        --loading-bg: #020617;
+        --loading-spinner: #f8fafc;
+      }
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--loading-bg);
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
+      }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--loading-spinner);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      /* When app is mounted, we'll fade out the loading screen */
+      .app-loaded #loading-screen {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
   </head>
   <body>
+    <div id="loading-screen">
+      <div class="spinner"></div>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

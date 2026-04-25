@@ -30,7 +30,7 @@
   <Tooltip>
     <TooltipTrigger as-child>
       <div>
-        <DropdownMenu>
+        <DropdownMenu :modal="false">
           <DropdownMenuTrigger as-child>
             <Avatar size="header" class="border-2 border-transparent hover:border-accent shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer">
               <AvatarImage :src="userAvatar" alt="Avatar" />
