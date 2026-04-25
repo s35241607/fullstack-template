@@ -20,7 +20,7 @@
   } from '@/components/ui/tooltip'
 
   // Layout Components
-  import NotificationPanel from './NotificationPanel.vue'
+
   import LanguageSwitcher from './LanguageSwitcher.vue'
   import ThemeSwitcher from './ThemeSwitcher.vue'
   import UserMenu from './UserMenu.vue'
@@ -87,7 +87,7 @@
           </Tooltip>
 
           <div class="flex items-center gap-1">
-            <NotificationPanel />
+
             <LanguageSwitcher />
             <ThemeSwitcher />
             <Separator orientation="vertical" class="h-4 mx-1" />

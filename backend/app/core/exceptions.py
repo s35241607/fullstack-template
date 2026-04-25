@@ -1,25 +1,25 @@
-from typing import Any
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 
 class ErrorResponse(BaseModel):
     success: bool = False
     error_code: str
     message: str
-    details: Any | None = None
+    details: object | None = None
 
 
 class BaseAppException(Exception):
     def __init__(
-        self, 
-        message: str, 
-        error_code: str = "INTERNAL_SERVER_ERROR", 
+        self,
+        message: str,
+        error_code: str = "INTERNAL_SERVER_ERROR",
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-        details: Any | None = None
-    ):
+        details: object | None = None
+    ) -> None:
         self.message = message
         self.error_code = error_code
         self.status_code = status_code
@@ -28,10 +28,10 @@ class BaseAppException(Exception):
 
 
 class NotFoundException(BaseAppException):
-    def __init__(self, message: str = "Resource not found", details: Any | None = None):
+    def __init__(self, message: str = "Resource not found", details: object | None = None) -> None:
         super().__init__(
-            message=message, 
-            error_code="NOT_FOUND", 
+            message=message,
+            error_code="NOT_FOUND",
             status_code=status.HTTP_404_NOT_FOUND,
             details=details
         )
@@ -52,7 +52,7 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -
     error_code = "DATABASE_ERROR"
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     message = "A database error occurred."
-    
+
     if isinstance(exc, IntegrityError):
         error_code = "INTEGRITY_ERROR"
         status_code = status.HTTP_400_BAD_REQUEST

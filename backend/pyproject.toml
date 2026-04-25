@@ -34,6 +34,16 @@ dev = [
 target-version = "py312"
 line-length = 120
 src = ["app", "tests"]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pypackages__",
+    "__pyrefly_virtual__",
+    "node_modules",
+    "migrations",
+]
 
 [tool.ruff.lint]
 select = [
@@ -66,6 +76,7 @@ indent-style = "space"
 [tool.mypy]
 python_version = "3.12"
 strict = true
+exclude = ["__pyrefly_virtual__", "migrations"]
 plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
 
 [tool.pytest.ini_options]

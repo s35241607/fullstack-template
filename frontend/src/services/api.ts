@@ -13,38 +13,6 @@ apiClient.interceptors.response.use(
   },
 )
 
-// ── Notification Types ─────────────────────────────────────────────────────────
-
-export interface Notification {
-  id: string
-  title: string
-  message: string
-  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
-  is_read: boolean
-  link: string | null
-  created_at: string
-}
-
-export interface UnreadCount {
-  count: number
-}
-
-// ── Notification API ───────────────────────────────────────────────────────────
-
-export const notificationsApi = {
-  list: (unreadOnly = false) =>
-    apiClient
-      .get<Notification[]>('/notifications/', { params: { unread_only: unreadOnly } })
-      .then((r) => r.data),
-
-  unreadCount: () => apiClient.get<UnreadCount>('/notifications/unread-count').then((r) => r.data),
-
-  markRead: (id: string) =>
-    apiClient.patch<Notification>(`/notifications/${id}/read`).then((r) => r.data),
-
-  markAllRead: () => apiClient.post('/notifications/read-all'),
-}
-
 // ── PO Management Types ───────────────────────────────────────────────────────
 
 export interface PurchaseOrderReceipt {
