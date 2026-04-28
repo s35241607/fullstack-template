@@ -23,9 +23,8 @@ Monorepo combining a Vue 3 frontend and a FastAPI backend.
 
 ### Structure
 - `frontend/`: Vue 3 + TypeScript + Tailwind v4 + shadcn-vue.
-- `backend/`: Python 3.12 + FastAPI + SQLAlchemy 2.0 (DDD/Clean Architecture).
-- `openspec/`: API and design specifications.
-
+- `backend/`: Python 3.12 + FastAPI + SQLAlchemy 2.0.
+- 
 ### Shared Rules
 - **Commits**: Use Conventional Commits with Chinese descriptions.
 - **I18N**: 100% of user-visible text must use i18n keys.
