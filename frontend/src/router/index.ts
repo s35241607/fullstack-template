@@ -50,6 +50,12 @@ const router = createRouter({
       ],
     },
     {
+      path: '/ag-grid-demo',
+      name: 'ag-grid-demo',
+      component: () => import('@/views/AgGridDemoView.vue'),
+      meta: { breadcrumb: 'AG Grid 展示' },
+    },
+    {
       path: '/demo',
       name: 'demo',
       component: () => import('@/views/DemoView.vue'),
