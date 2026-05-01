@@ -65,7 +65,10 @@
       headerName: '價格',
       filter: 'agNumberColumnFilter',
       width: 120,
-      valueFormatter: (params: any) => `$${params.value?.toLocaleString()}`,
+      valueFormatter: (params: any) => {
+        if (params.value == null || isNaN(Number(params.value))) return ''
+        return `$${Number(params.value).toLocaleString()}`
+      },
       cellClass: 'font-mono text-right',
     },
     {

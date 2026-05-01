@@ -2,26 +2,13 @@
   import { AgGridVue } from 'ag-grid-vue3'
   import {
     ModuleRegistry,
-    ClientSideRowModelModule,
-    TextFilterModule,
-    NumberFilterModule,
-    DateFilterModule,
-    ValidationModule,
-    TextEditorModule,
-    NumberEditorModule,
-    DateEditorModule,
-    CheckboxEditorModule,
-    SelectEditorModule,
-    UndoRedoEditModule,
-    CellStyleModule,
-    RowSelectionModule,
-    ColumnAutoSizeModule,
-    ColumnApiModule,
+    AllCommunityModule,
     themeQuartz,
     type CellFocusedEvent,
     type CellKeyDownEvent,
     type CellMouseDownEvent,
     type CellMouseOverEvent,
+    type CellValueChangedEvent,
     type ColDef,
     type Column,
     type GridApi,
@@ -35,23 +22,7 @@
   import { useDark } from '@vueuse/core'
 
   // Register all required community modules
-  ModuleRegistry.registerModules([
-    ClientSideRowModelModule,
-    TextFilterModule,
-    NumberFilterModule,
-    DateFilterModule,
-    ValidationModule,
-    TextEditorModule,
-    NumberEditorModule,
-    DateEditorModule,
-    CheckboxEditorModule,
-    SelectEditorModule,
-    UndoRedoEditModule,
-    CellStyleModule,
-    RowSelectionModule,
-    ColumnAutoSizeModule,
-    ColumnApiModule,
-  ])
+  ModuleRegistry.registerModules([AllCommunityModule])
 
   type GridRowData = Record<string, unknown>
   type GridColumnDef = ColDef<GridRowData>
@@ -104,7 +75,7 @@
   const isSelecting = ref(false)
   const selectedRanges = ref<CellRange[]>([])
   const currentRangeIndex = ref(-1)
-  const rangeSelectedCells = ref<Record<string, boolean>>({})
+  const gridReady = ref(false)
 
   // Fill handle state
   type FillHandlePos = { left: number; top: number }
@@ -120,13 +91,15 @@
 
   // ─── Undo Stack ───────────────────────────────────────────────────────────────
 
-  type UndoEntry = { rowIndex: number; colId: string; oldValue: unknown }[]
+  type UndoEntry = { rowIndex: number; colId: string; oldValue: unknown; newValue: unknown }[]
   const undoStack: UndoEntry[] = []
+  const redoStack: UndoEntry[] = []
   const MAX_UNDO_STEPS = 100
 
   const pushUndo = (entries: UndoEntry) => {
     if (entries.length === 0) return
     undoStack.push(entries)
+    redoStack.length = 0 // Clear redo stack on new action
     if (undoStack.length > MAX_UNDO_STEPS) undoStack.shift()
   }
 
@@ -135,6 +108,8 @@
     if (!api || undoStack.length === 0) return
 
     const entries = undoStack.pop()!
+    redoStack.push(entries)
+
     const displayedColumns = getDisplayedColumns()
     const colMap = new Map(displayedColumns.map((c) => [c.getColId(), c]))
 
@@ -146,12 +121,48 @@
       if (!rowNode || !column) continue
       rowNode.setDataValue(column, oldValue, 'undo')
     }
+  }
 
-    updateRangeSelection()
+  const applyRedo = () => {
+    const api = gridApi.value
+    if (!api || redoStack.length === 0) return
+
+    const entries = redoStack.pop()!
+    undoStack.push(entries)
+
+    const displayedColumns = getDisplayedColumns()
+    const colMap = new Map(displayedColumns.map((c) => [c.getColId(), c]))
+
+    api.stopEditing()
+
+    for (const { rowIndex, colId, newValue } of entries) {
+      const rowNode = api.getDisplayedRowAtIndex(rowIndex)
+      const column = colMap.get(colId)
+      if (!rowNode || !column) continue
+      rowNode.setDataValue(column, newValue, 'redo')
+    }
   }
 
   const getDisplayedColumns = (): Column[] => {
     return gridApi.value?.getAllDisplayedColumns() ?? []
+  }
+
+  const getPinnedLeftWidth = (): number => {
+    const api = gridApi.value
+    if (!api) return 0
+    return api
+      .getAllDisplayedColumns()
+      .filter((c) => c.getPinned() === 'left')
+      .reduce((acc, c) => acc + c.getActualWidth(), 0)
+  }
+
+  const getPinnedRightWidth = (): number => {
+    const api = gridApi.value
+    if (!api) return 0
+    return api
+      .getAllDisplayedColumns()
+      .filter((c) => c.getPinned() === 'right')
+      .reduce((acc, c) => acc + c.getActualWidth(), 0)
   }
 
   const getColumnIds = (): string[] => {
@@ -183,6 +194,24 @@
       colEnd,
       columnIds: columnIds.slice(colStart, colEnd + 1),
     }
+  }
+
+  const isPointInRange = (point: CellPoint, range: CellRange): boolean => {
+    const normalized = getNormalizedRange(range)
+    if (!normalized) return false
+
+    const colIdx = getColumnIds().indexOf(point.colId)
+    return (
+      point.rowIndex >= normalized.rowStart &&
+      point.rowIndex <= normalized.rowEnd &&
+      colIdx >= normalized.colStart &&
+      colIdx <= normalized.colEnd
+    )
+  }
+
+  const isCellSelected = (rowIndex: number, colId: string): boolean => {
+    const point = { rowIndex, colId }
+    return selectedRanges.value.some((range) => isPointInRange(point, range))
   }
 
   const focusCell = (point: CellPoint) => {
@@ -236,25 +265,34 @@
 
     // Don't update while user is dragging to select (prevents flickering)
     if (isSelecting.value) return
+    // Use requestAnimationFrame to ensure AG Grid has finished rendering
+    requestAnimationFrame(() => {
+      const container = gridContainer.value
+      const lastRange = selectedRanges.value[selectedRanges.value.length - 1]
+      const cellEl = getBottomRightCellElement(lastRange)
 
-    await nextTick()
+      if (!container || !cellEl) {
+        fillHandlePos.value = null
+        return
+      }
 
-    const container = gridContainer.value
-    const lastRange = selectedRanges.value[selectedRanges.value.length - 1]
-    const cellEl = getBottomRightCellElement(lastRange)
+      const containerRect = container.getBoundingClientRect()
+      const cellRect = cellEl.getBoundingClientRect()
 
-    if (!container || !cellEl) {
-      fillHandlePos.value = null
-      return
-    }
+      fillHandlePos.value = {
+        left: cellRect.right - containerRect.left,
+        top: cellRect.bottom - containerRect.top,
+      }
+    })
+  }
 
-    const containerRect = container.getBoundingClientRect()
-    const cellRect = cellEl.getBoundingClientRect()
-
-    fillHandlePos.value = {
-      left: cellRect.right - containerRect.left,
-      top: cellRect.bottom - containerRect.top,
-    }
+  const updateAllRects = () => {
+    requestAnimationFrame(() => {
+      updateSelectionRects()
+      updateCopyRects()
+      updateFillHandlePosition()
+      if (fillDragging.value) updateFillPreviewRect()
+    })
   }
 
   // Watch selectedRanges for changes to update fill handle position
@@ -264,11 +302,12 @@
 
   let scrollViewport: Element | null = null
 
+  const onBodyScroll = () => {
+    updateAllRects()
+  }
+
   const onBodyViewportScroll = () => {
-    updateFillHandlePosition()
-    updateSelectionRects()
-    updateCopyRects()
-    if (fillDragging.value) updateFillPreviewRect()
+    updateAllRects()
   }
 
   // ─── Range & Copy Overlays ───────────────────────────────────────────────────
@@ -468,7 +507,8 @@
       const row = normalizedRange.columnIds.map((colId) => {
         const column = displayedColumns.find((c) => c.getColId() === colId)
         if (!rowNode || !column) return ''
-        return formatClipboardValue(getCellRawValue(rowNode, column))
+        const value = getCellRawValue(rowNode, column)
+        return formatClipboardValue({ rowNode, column, value })
       })
       matrix.push(row)
     }
@@ -515,8 +555,14 @@
 
         const sourceColOffset = colIdx % (sourceRow?.length ?? 1)
         const rawValue = sourceRow?.[sourceColOffset] ?? ''
-        undoEntries.push({ rowIndex, colId, oldValue: getCellRawValue(rowNode, column) })
-        rowNode.setDataValue(column, parsePastedValue(rowNode, column, rawValue), 'fill')
+        const newValue = parsePastedValue(rowNode, column, rawValue)
+        undoEntries.push({
+          rowIndex,
+          colId,
+          oldValue: getCellRawValue(rowNode, column),
+          newValue,
+        })
+        rowNode.setDataValue(column, newValue, 'fill')
       }
     }
 
@@ -537,12 +583,14 @@
     ]
 
     currentRangeIndex.value = -1
-    updateRangeSelection()
+    gridApi.value?.refreshCells({ force: true })
+    updateSelectionRects()
     // updateFillHandlePosition will be called by the watcher
   }
 
   const onGridReady = (params: GridReadyEvent<GridRowData>) => {
     gridApi.value = params.api
+    gridReady.value = true
     window.addEventListener('mouseup', handleMouseUp)
     window.addEventListener('mousemove', handleFillDragMove)
 
@@ -550,6 +598,13 @@
     nextTick(() => {
       scrollViewport = gridContainer.value?.querySelector('.ag-body-viewport') ?? null
       scrollViewport?.addEventListener('scroll', onBodyViewportScroll, { passive: true })
+
+      if (gridContainer.value) {
+        const resizeObserver = new ResizeObserver(() => {
+          updateAllRects()
+        })
+        resizeObserver.observe(gridContainer.value)
+      }
     })
   }
 
@@ -573,8 +628,23 @@
       fillPreviewRect.value = null
     } else {
       // Selection drag just ended — now safe to show fill handle at final position
-      _suppressFocusSync = false
+      nextTick(() => {
+        _suppressFocusSync = false
+      })
       updateFillHandlePosition()
+
+      // Optimization: Avoid refreshing if it's a simple click on an already focused cell
+      // to preserve the double-click event chain.
+      const focusedCell = gridApi.value?.getFocusedCell()
+      const isSingleCell =
+        selectedRanges.value.length === 1 &&
+        selectedRanges.value[0].start.rowIndex === selectedRanges.value[0].end.rowIndex &&
+        selectedRanges.value[0].start.colId === selectedRanges.value[0].end.colId
+
+      if (!isSingleCell) {
+        gridApi.value?.refreshCells({ force: true })
+      }
+
       updateSelectionRects()
     }
   }
@@ -592,6 +662,7 @@
     const newPoint = { rowIndex: node.rowIndex, colId: column.getId() }
 
     if (event.shiftKey && selectedRanges.value.length > 0) {
+      // Ensure currentRangeIndex points to the last range when extending with shift
       currentRangeIndex.value = selectedRanges.value.length - 1
       selectedRanges.value[currentRangeIndex.value].end = newPoint
     } else if (isMulti) {
@@ -602,7 +673,20 @@
       currentRangeIndex.value = 0
     }
 
-    updateRangeSelection()
+    const focusedCell = params.api.getFocusedCell()
+    const isAlreadyFocused =
+      focusedCell && focusedCell.rowIndex === node.rowIndex && focusedCell.column === column
+
+    updateSelectionRects()
+
+    // To support double-click to edit, we MUST NOT refresh the cells on mousedown
+    // because that destroys the DOM element and prevents the browser from
+    // recognizing the second click of a double-click on the original element.
+    // We only refresh on mouseover (during drag) and on mouseup.
+    if (isMulti || event.shiftKey) {
+      // For multi-select or shift, we can refresh as double-click is less expected
+      params.api.refreshCells({ force: true })
+    }
   }
 
   const onCellMouseOver = (params: CellMouseOverEvent<GridRowData>) => {
@@ -612,70 +696,60 @@
     const range = selectedRanges.value[currentRangeIndex.value]
     range.end = { rowIndex: params.node.rowIndex, colId: params.column.getId() }
 
-    updateRangeSelection()
-  }
-
-  const updateRangeSelection = () => {
-    const api = gridApi.value
-
-    if (!api || selectedRanges.value.length === 0) {
-      rangeSelectedCells.value = {}
-      selectionRects.value = []
-      return
-    }
-
-    const newSelection: Record<string, boolean> = {}
-
-    selectedRanges.value.forEach((range) => {
-      const normalizedRange = getNormalizedRange(range)
-
-      if (!normalizedRange) {
-        return
-      }
-
-      for (
-        let rowIndex = normalizedRange.rowStart;
-        rowIndex <= normalizedRange.rowEnd;
-        rowIndex += 1
-      ) {
-        normalizedRange.columnIds.forEach((colId) => {
-          newSelection[`${rowIndex}:${colId}`] = true
-        })
-      }
-    })
-
-    rangeSelectedCells.value = newSelection
-    api.refreshCells({ force: true })
     updateSelectionRects()
+    params.api.refreshCells({ force: true })
   }
 
-  const getFieldValue = (data: GridRowData | undefined, field: string): unknown => {
-    if (!data) {
-      return undefined
-    }
+  const onCellValueChanged = (params: CellValueChangedEvent<GridRowData>) => {
+    // Only track manual edits (source: 'edit')
+    if (params.source !== 'edit') return
 
-    return field.split('.').reduce<unknown>((value, key) => {
-      if (value === null || value === undefined || typeof value !== 'object') {
-        return undefined
-      }
-
-      return (value as Record<string, unknown>)[key]
-    }, data)
+    pushUndo([
+      {
+        rowIndex: params.node.rowIndex!,
+        colId: params.column.getColId(),
+        oldValue: params.oldValue,
+        newValue: params.newValue,
+      },
+    ])
   }
 
   const getCellRawValue = (rowNode: IRowNode<GridRowData>, column: Column): unknown => {
-    const colDef = column.getColDef() as GridColumnDef
-
-    if (colDef.field) {
-      return getFieldValue(rowNode.data, colDef.field)
-    }
-
-    return rowNode.data?.[column.getColId()]
+    if (!gridApi.value || !rowNode) return undefined
+    // AG Grid v31+ uses getCellValue with an object parameter
+    return gridApi.value.getCellValue({
+      rowNode: rowNode,
+      colKey: column,
+    })
   }
 
-  const formatClipboardValue = (value: unknown): string => {
+  const formatClipboardValue = (params: {
+    rowNode: IRowNode<GridRowData>
+    column: Column
+    value: unknown
+  }): string => {
+    const { rowNode, column, value } = params
     if (value === null || value === undefined) {
       return ''
+    }
+
+    const colDef = column.getColDef() as GridColumnDef
+    if (colDef.valueFormatter && typeof colDef.valueFormatter === 'function') {
+      try {
+        // Manually invoke the formatter with the standard AG Grid params object
+        return colDef.valueFormatter({
+          value,
+          data: rowNode.data,
+          node: rowNode,
+          column,
+          colDef,
+          api: gridApi.value!,
+          context: gridApi.value?.getGridOptions()?.context,
+        })
+      } catch (e) {
+        console.warn('Value formatter failed during copy:', e)
+        return String(value)
+      }
     }
 
     if (value instanceof Date) {
@@ -693,7 +767,7 @@
       return []
     }
 
-    const rows: string[] = []
+    const rows: string[] = new Array(normalizedRange.rowEnd - normalizedRange.rowStart + 1)
 
     for (
       let rowIndex = normalizedRange.rowStart;
@@ -701,17 +775,19 @@
       rowIndex += 1
     ) {
       const rowNode = api.getDisplayedRowAtIndex(rowIndex)
+      if (!rowNode) {
+        rows[rowIndex - normalizedRange.rowStart] = ''
+        continue
+      }
+
       const rowValues = normalizedRange.columnIds.map((colId) => {
         const column = columnMap.get(colId)
-
-        if (!rowNode || !column) {
-          return ''
-        }
-
-        return formatClipboardValue(getCellRawValue(rowNode, column))
+        if (!column) return ''
+        const value = getCellRawValue(rowNode, column)
+        return formatClipboardValue({ rowNode, column, value })
       })
 
-      rows.push(rowValues.join('\t'))
+      rows[rowIndex - normalizedRange.rowStart] = rowValues.join('\t')
     }
 
     return rows
@@ -742,7 +818,10 @@
     return selectedNodes
       .map((rowNode) => {
         return displayedColumns
-          .map((column) => formatClipboardValue(getCellRawValue(rowNode, column)))
+          .map((column) => {
+            const value = getCellRawValue(rowNode, column)
+            return formatClipboardValue({ rowNode, column, value })
+          })
           .join('\t')
       })
       .join('\n')
@@ -926,16 +1005,14 @@
 
           const rawValue =
             sourceRow[(columnIndex - normalizedRange.colStart) % sourceRow.length] ?? ''
+          const newValue = parsePastedValue(rowNode, targetColumn, rawValue)
           undoEntries.push({
             rowIndex,
             colId: targetColumn.getColId(),
             oldValue: getCellRawValue(rowNode, targetColumn),
+            newValue,
           })
-          rowNode.setDataValue(
-            targetColumn,
-            parsePastedValue(rowNode, targetColumn, rawValue),
-            'paste',
-          )
+          rowNode.setDataValue(targetColumn, newValue, 'paste')
           lastVisited = { rowIndex, colId: targetColumn.getColId() }
         }
       }
@@ -957,16 +1034,15 @@
           }
 
           const targetRowIndex = anchor.rowIndex + rowOffset
+          const rawValue = sourceRow[columnOffset]
+          const newValue = parsePastedValue(rowNode, targetColumn, rawValue)
           undoEntries.push({
             rowIndex: targetRowIndex,
             colId: targetColumn.getColId(),
             oldValue: getCellRawValue(rowNode, targetColumn),
+            newValue,
           })
-          rowNode.setDataValue(
-            targetColumn,
-            parsePastedValue(rowNode, targetColumn, sourceRow[columnOffset]),
-            'paste',
-          )
+          rowNode.setDataValue(targetColumn, newValue, 'paste')
           lastVisited = { rowIndex: targetRowIndex, colId: targetColumn.getColId() }
         }
       }
@@ -983,7 +1059,8 @@
       currentRangeIndex.value = -1
     }
 
-    updateRangeSelection()
+    updateSelectionRects()
+    api.refreshCells({ force: true })
     focusCell(anchor)
 
     return true
@@ -1003,20 +1080,87 @@
     if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
       const api = gridApi.value
       if (!api) return
-      if (isClipboardEventFromEditor(event.target)) {
-        // The event is inside an editor — let the editor handle Enter.
-        // Returning WITHOUT preventDefault allows the native input to fire first,
-        // then the editor's own keydown handler (bubble phase) will fire.
-        // Do NOT call api.stopEditing() here — popup editors (e.g. SearchableSelectEditor)
-        // must update their value before stopEditing() is called.
+
+      // If we're already editing, let the grid handle it (bubble phase)
+      if (api.getEditingCells().length > 0) {
         return
       }
-      // Not in an editor — start editing the focused cell.
+
       const focusedCell = api.getFocusedCell()
       if (focusedCell && focusedCell.rowIndex !== null && !focusedCell.rowPinned) {
         event.preventDefault()
-        event.stopPropagation() // prevent AG Grid from also handling Enter (double-trigger)
+        event.stopPropagation()
         api.startEditingCell({ rowIndex: focusedCell.rowIndex, colKey: focusedCell.column })
+      }
+      return
+    }
+
+    // Delete / Backspace:
+    // Excel behavior: Backspace on a cell starts editing with empty value (Esc restores).
+    // Delete usually just clears (Undo restores). To satisfy "Esc restores for Delete",
+    // we make single-cell Delete also start editing with an empty value.
+    if (
+      (event.key === 'Delete' || event.key === 'Backspace') &&
+      !event.shiftKey &&
+      !event.ctrlKey &&
+      !event.metaKey
+    ) {
+      const api = gridApi.value
+      if (!api || isClipboardEventFromEditor(event.target)) return
+
+      const focusedCell = api.getFocusedCell()
+      const isRange =
+        selectedRanges.value.length > 1 ||
+        (selectedRanges.value.length === 1 &&
+          (selectedRanges.value[0].start.rowIndex !== selectedRanges.value[0].end.rowIndex ||
+            selectedRanges.value[0].start.colId !== selectedRanges.value[0].end.colId))
+
+      // For single-cell selection, start editing with an empty string so Esc can restore the value.
+      if (!isRange && focusedCell && focusedCell.rowIndex !== null && !focusedCell.rowPinned) {
+        event.preventDefault()
+        event.stopPropagation()
+        api.startEditingCell({
+          rowIndex: focusedCell.rowIndex,
+          colKey: focusedCell.column,
+          charPress: '',
+        })
+        return
+      }
+
+      // For multi-cell/range selection, perform a bulk delete (restorable via Ctrl+Z).
+      event.preventDefault()
+      event.stopPropagation()
+
+      api.stopEditing()
+      const undoEntries: UndoEntry = []
+      const displayedColumns = getDisplayedColumns()
+      const colMap = new Map(displayedColumns.map((c) => [c.getColId(), c]))
+
+      selectedRanges.value.forEach((range) => {
+        const normalized = getNormalizedRange(range)
+        if (!normalized) return
+
+        for (let r = normalized.rowStart; r <= normalized.rowEnd; r++) {
+          const rowNode = api.getDisplayedRowAtIndex(r)
+          if (!rowNode) continue
+
+          normalized.columnIds.forEach((colId) => {
+            const column = colMap.get(colId)
+            if (!column || !canPasteIntoCell(rowNode, column)) return
+
+            undoEntries.push({
+              rowIndex: r,
+              colId,
+              oldValue: getCellRawValue(rowNode, column),
+              newValue: null,
+            })
+            rowNode.setDataValue(column, null, 'delete')
+          })
+        }
+      })
+
+      if (undoEntries.length > 0) {
+        pushUndo(undoEntries)
       }
       return
     }
@@ -1032,16 +1176,38 @@
     const key = event.key.toLowerCase()
 
     if (key === 'z') {
-      // Always stop editing first (commits or discards the in-progress edit)
-      // before checking our undo stack so we don't double-apply.
       const api = gridApi.value
       if (api && api.getEditingCells().length > 0) {
-        api.stopEditing(false) // false = cancel (discard) the edit
+        api.stopEditing(false)
       }
-      if (undoStack.length > 0) {
+
+      if (
+        event.shiftKey ||
+        (navigator.platform.toUpperCase().indexOf('MAC') >= 0 && event.shiftKey)
+      ) {
+        // Redo (Ctrl+Shift+Z or Cmd+Shift+Z)
+        if (redoStack.length > 0) {
+          event.preventDefault()
+          event.stopPropagation()
+          applyRedo()
+        }
+      } else {
+        // Undo (Ctrl+Z)
+        if (undoStack.length > 0) {
+          event.preventDefault()
+          event.stopPropagation()
+          applyUndo()
+        }
+      }
+      return
+    }
+
+    if (key === 'y' && !event.shiftKey) {
+      // Redo (Ctrl+Y)
+      if (redoStack.length > 0) {
         event.preventDefault()
         event.stopPropagation()
-        applyUndo()
+        applyRedo()
       }
       return
     }
@@ -1086,6 +1252,7 @@
       } catch {
         // Clipboard read API not available or permission denied
       }
+      return
     }
   }
 
@@ -1103,11 +1270,7 @@
           return false
         }
 
-        return Boolean(
-          rangeSelectedCells.value[
-            getCellId({ rowIndex: params.node.rowIndex, colId: params.column.getColId() })
-          ],
-        )
+        return isCellSelected(params.node.rowIndex, params.column.getColId())
       },
     },
   }
@@ -1115,7 +1278,8 @@
   const clearSelections = () => {
     selectedRanges.value = []
     currentRangeIndex.value = -1
-    updateRangeSelection()
+    updateSelectionRects()
+    gridApi.value?.refreshCells({ force: true })
     clearCopyState()
   }
 
@@ -1139,6 +1303,23 @@
       return
     }
 
+    // Ctrl + A: Select All
+    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+      event.preventDefault()
+      const rowCount = api.getDisplayedRowCount()
+      const allColumns = api.getAllDisplayedColumns()
+      if (rowCount > 0 && allColumns.length > 0) {
+        selectedRanges.value = [{
+          start: { rowIndex: 0, colId: allColumns[0].getColId() },
+          end: { rowIndex: rowCount - 1, colId: allColumns[allColumns.length - 1].getColId() }
+        }]
+        currentRangeIndex.value = 0
+        updateSelectionRects()
+        api.refreshCells({ force: true })
+      }
+      return
+    }
+
     if (event.shiftKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
       if (rowIndex === null) {
         return
@@ -1147,11 +1328,18 @@
       event.preventDefault()
 
       if (selectedRanges.value.length === 0) {
-        const point = { rowIndex, colId: column.getId() }
+        const point = { rowIndex, colId: column.getColId() }
         selectedRanges.value.push({ start: point, end: point })
+        currentRangeIndex.value = 0
       }
 
-      const range = selectedRanges.value[selectedRanges.value.length - 1]
+      if (currentRangeIndex.value === -1 && selectedRanges.value.length > 0) {
+        currentRangeIndex.value = selectedRanges.value.length - 1
+      }
+
+      const range = selectedRanges.value[currentRangeIndex.value]
+      if (!range) return
+
       let nextRowIndex = range.end.rowIndex
       let nextColId = range.end.colId
 
@@ -1166,7 +1354,8 @@
       if (event.key === 'ArrowRight') colIdx = Math.min(columnIds.length - 1, colIdx + 1)
 
       range.end = { rowIndex: nextRowIndex, colId: columnIds[colIdx] }
-      updateRangeSelection()
+      updateSelectionRects()
+      api.refreshCells({ force: true })
 
       api.ensureIndexVisible(range.end.rowIndex)
       api.ensureColumnVisible(range.end.colId)
@@ -1189,8 +1378,20 @@
     if (!colId) return
     const newPoint: CellPoint = { rowIndex: event.rowIndex, colId }
     selectedRanges.value = [{ start: newPoint, end: newPoint }]
-    currentRangeIndex.value = -1
-    updateRangeSelection()
+    currentRangeIndex.value = 0 // Set to 0 to allow Shift+Arrow to find this range
+    updateSelectionRects()
+
+    // Optimization: Avoid refreshing for single cell focus to preserve double-click.
+    // The focus border from AG Grid is already sufficient visual feedback.
+    // We only need a full refresh for multi-cell ranges.
+    const isSingleCell =
+      selectedRanges.value.length === 1 &&
+      selectedRanges.value[0].start.rowIndex === selectedRanges.value[0].end.rowIndex &&
+      selectedRanges.value[0].start.colId === selectedRanges.value[0].end.colId
+
+    if (!isSingleCell) {
+      event.api.refreshCells({ force: true })
+    }
   }
 
   defineExpose({
@@ -1225,57 +1426,84 @@
       :enable-cell-text-selection="false"
       :ensure-dom-order="true"
       @grid-ready="onGridReady"
+      @body-scroll="onBodyScroll"
+      @column-resized="updateAllRects"
+      @column-moved="updateAllRects"
+      @column-visible="updateAllRects"
+      @displayed-columns-changed="updateAllRects"
       @cell-key-down="onCellKeyDown"
       @cell-mouse-down="onCellMouseDown"
       @cell-mouse-over="onCellMouseOver"
       @cell-focused="onCellFocused"
+      @cell-value-changed="onCellValueChanged"
     />
 
-    <!-- Fill Handle: small square at bottom-right corner of selection -->
-    <div
-      v-if="fillHandlePos && selectedRanges.length > 0 && !fillDragging && !isSelecting"
-      class="fill-handle"
-      :style="{ left: fillHandlePos.left + 'px', top: fillHandlePos.top + 'px' }"
-      @mousedown="onFillHandleMouseDown"
-    />
+    <!-- 
+      Overlays are teleported into the AG Grid root so they respect internal layering.
+      We use a clip-path to ensure the selection border is hidden under the pinned columns
+      when scrolling, satisfying the "covered by frozen columns" requirement.
+    -->
+    <Teleport v-if="gridReady && gridContainer" :to="gridContainer.querySelector('.ag-root')">
+      <div
+        class="ag-custom-overlays-container"
+        :style="{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 10,
+          clipPath: `inset(0 ${getPinnedRightWidth()}px 0 ${getPinnedLeftWidth()}px)`,
+        }"
+      >
+        <!-- Fill Handle: small square at bottom-right corner of selection -->
+        <div
+          v-if="fillHandlePos && selectedRanges.length > 0 && !fillDragging && !isSelecting"
+          class="fill-handle"
+          :style="{ left: fillHandlePos.left + 'px', top: fillHandlePos.top + 'px' }"
+          @mousedown="onFillHandleMouseDown"
+        />
 
-    <!-- Fill Preview: dashed overlay shown while dragging fill handle -->
-    <div
-      v-if="fillDragging && fillPreviewRect"
-      class="fill-preview"
-      :style="{
-        left: fillPreviewRect.left + 'px',
-        top: fillPreviewRect.top + 'px',
-        width: fillPreviewRect.width + 'px',
-        height: fillPreviewRect.height + 'px',
-      }"
-    />
+        <!-- Fill Preview: dashed overlay shown while dragging fill handle -->
+        <div
+          v-if="fillDragging && fillPreviewRect"
+          class="fill-preview"
+          :style="{
+            left: fillPreviewRect.left + 'px',
+            top: fillPreviewRect.top + 'px',
+            width: fillPreviewRect.width + 'px',
+            height: fillPreviewRect.height + 'px',
+          }"
+        />
 
-    <!-- Selection Range Overlays: clean outer border around each selected range -->
-    <div
-      v-for="(rect, i) in selectionRects"
-      :key="'sel-' + i"
-      class="selection-range-overlay"
-      :style="{
-        left: rect.left + 'px',
-        top: rect.top + 'px',
-        width: rect.width + 'px',
-        height: rect.height + 'px',
-      }"
-    />
+        <!-- Selection Range Overlays: clean outer border around each selected range -->
+        <div
+          v-for="(rect, i) in selectionRects"
+          :key="'sel-' + i"
+          class="selection-range-overlay"
+          :style="{
+            left: rect.left + 'px',
+            top: rect.top + 'px',
+            width: rect.width + 'px',
+            height: rect.height + 'px',
+          }"
+        />
 
-    <!-- Copy Range Overlays: animated dashed border indicating copied area (like Excel marching ants) -->
-    <div
-      v-for="(rect, i) in copyRects"
-      :key="'copy-' + i"
-      class="copy-range-overlay"
-      :style="{
-        left: rect.left + 'px',
-        top: rect.top + 'px',
-        width: rect.width + 'px',
-        height: rect.height + 'px',
-      }"
-    />
+        <!-- Copy Range Overlays: animated dashed border indicating copied area (like Excel marching ants) -->
+        <div
+          v-for="(rect, i) in copyRects"
+          :key="'copy-' + i"
+          class="copy-range-overlay"
+          :style="{
+            left: rect.left + 'px',
+            top: rect.top + 'px',
+            width: rect.width + 'px',
+            height: rect.height + 'px',
+          }"
+        />
+      </div>
+    </Teleport>
   </div>
 </template>
 

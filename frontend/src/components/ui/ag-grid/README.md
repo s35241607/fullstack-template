@@ -9,6 +9,7 @@
 | `AgGrid.vue` | 主要封裝元件，包含所有 Excel 風格功能 |
 | `SearchableSelectEditor.vue` | 可搜尋下拉選單 Cell Editor（popup 彈出式） |
 | `index.ts` | 統一匯出入口 |
+| `UT.md` | Excel 功能驗證清單 (測試用例) |
 
 ---
 
