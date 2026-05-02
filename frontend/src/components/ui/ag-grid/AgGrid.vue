@@ -87,11 +87,21 @@
   // Fill handle state
   type FillHandlePos = { left: number; top: number }
   type FillRect = { left: number; top: number; width: number; height: number }
+  type ClientRectBounds = { left: number; top: number; right: number; bottom: number }
+  type ColumnSection = 'left' | 'center' | 'right'
+  type ColumnSegment = { section: ColumnSection; columnIds: string[] }
+  type NormalizedRange = {
+    rowStart: number
+    rowEnd: number
+    colStart: number
+    colEnd: number
+    columnIds: string[]
+  }
   const fillHandlePos = ref<FillHandlePos | null>(null)
   const fillDragging = ref(false)
   const fillSourceRange = ref<CellRange | null>(null)
   const fillPreviewRange = ref<CellRange | null>(null)
-  const fillPreviewRect = ref<FillRect | null>(null)
+  const fillPreviewRects = ref<FillRect[]>([])
   const selectionRects = ref<FillRect[]>([])
   const copyRanges = ref<CellRange[]>([])
   const copyRects = ref<FillRect[]>([])
@@ -159,29 +169,116 @@
     return gridApi.value?.getAllDisplayedColumns() ?? []
   }
 
-  const getPinnedLeftWidth = (): number => {
-    const api = gridApi.value
-    if (!api) return 0
-    return api
-      .getAllDisplayedColumns()
-      .filter((c) => c.getPinned() === 'left')
-      .reduce((acc, c) => acc + c.getActualWidth(), 0)
-  }
-
-  const getPinnedRightWidth = (): number => {
-    const api = gridApi.value
-    if (!api) return 0
-    return api
-      .getAllDisplayedColumns()
-      .filter((c) => c.getPinned() === 'right')
-      .reduce((acc, c) => acc + c.getActualWidth(), 0)
-  }
-
   const getColumnIds = (): string[] => {
     return getDisplayedColumns().map((column) => column.getColId())
   }
 
-  const getNormalizedRange = (range: CellRange) => {
+  const getOverlayRoot = (): HTMLElement | null => {
+    return gridContainer.value?.querySelector<HTMLElement>('.ag-root') ?? null
+  }
+
+  const getColumnById = (colId: string): Column | undefined => {
+    return getDisplayedColumns().find((column) => column.getColId() === colId)
+  }
+
+  const getColumnSection = (colId: string): ColumnSection => {
+    const pinned = getColumnById(colId)?.getPinned()
+    if (pinned === 'left' || pinned === 'right') return pinned
+    return 'center'
+  }
+
+  const getCellElement = (rowIndex: number, colId: string): HTMLElement | null => {
+    return (
+      gridContainer.value?.querySelector<HTMLElement>(`[row-index="${rowIndex}"] [col-id="${colId}"]`) ??
+      null
+    )
+  }
+
+  const intersectClientRects = (
+    rect: ClientRectBounds,
+    clipRect: ClientRectBounds,
+  ): ClientRectBounds | null => {
+    const left = Math.max(rect.left, clipRect.left)
+    const top = Math.max(rect.top, clipRect.top)
+    const right = Math.min(rect.right, clipRect.right)
+    const bottom = Math.min(rect.bottom, clipRect.bottom)
+
+    if (right <= left || bottom <= top) return null
+
+    return { left, top, right, bottom }
+  }
+
+  const toOverlayRect = (rect: ClientRectBounds, overlayRootRect: DOMRect): FillRect => {
+    return {
+      left: rect.left - overlayRootRect.left,
+      top: rect.top - overlayRootRect.top,
+      width: rect.right - rect.left,
+      height: rect.bottom - rect.top,
+    }
+  }
+
+  const getSectionClipRect = (section: ColumnSection): ClientRectBounds | null => {
+    const overlayRoot = getOverlayRoot()
+    if (!overlayRoot) return null
+
+    const bodyViewportRect =
+      overlayRoot.querySelector<HTMLElement>('.ag-body-viewport')?.getBoundingClientRect() ??
+      overlayRoot.getBoundingClientRect()
+    const sectionSelector =
+      section === 'left'
+        ? '.ag-pinned-left-cols-container'
+        : section === 'right'
+          ? '.ag-pinned-right-cols-container'
+          : '.ag-center-cols-viewport'
+    const sectionRect =
+      overlayRoot.querySelector<HTMLElement>(sectionSelector)?.getBoundingClientRect() ??
+      (section === 'center' ? bodyViewportRect : null)
+
+    if (!sectionRect) return null
+
+    const top = Math.max(sectionRect.top, bodyViewportRect.top)
+    const bottom = Math.min(sectionRect.bottom, bodyViewportRect.bottom)
+    if (bottom <= top) return null
+
+    return {
+      left: sectionRect.left,
+      top,
+      right: sectionRect.right,
+      bottom,
+    }
+  }
+
+  const getBoundaryCellElement = (
+    rowIndex: number,
+    columnIds: string[],
+    direction: 'start' | 'end',
+  ): HTMLElement | null => {
+    const orderedColumnIds = direction === 'start' ? columnIds : [...columnIds].reverse()
+
+    for (const colId of orderedColumnIds) {
+      const cellEl = getCellElement(rowIndex, colId)
+      if (cellEl) return cellEl
+    }
+
+    return null
+  }
+
+  const getColumnSegments = (columnIds: string[]): ColumnSegment[] => {
+    return columnIds.reduce<ColumnSegment[]>((segments, colId) => {
+      const section = getColumnSection(colId)
+      const lastSegment = segments[segments.length - 1]
+
+      if (!lastSegment || lastSegment.section !== section) {
+        segments.push({ section, columnIds: [colId] })
+      } else {
+        lastSegment.columnIds.push(colId)
+      }
+
+      return segments
+    }, [])
+  }
+
+  const getNormalizedRange = (range: CellRange): NormalizedRange | null => {
     const columnIds = getColumnIds()
     const startColumnIndex = columnIds.indexOf(range.start.colId)
     const endColumnIndex = columnIds.indexOf(range.end.colId)
@@ -204,6 +301,164 @@
     }
   }
 
+  const isRangeContained = (outer: NormalizedRange, inner: NormalizedRange): boolean => {
+    return (
+      outer.rowStart <= inner.rowStart &&
+      outer.rowEnd >= inner.rowEnd &&
+      outer.colStart <= inner.colStart &&
+      outer.colEnd >= inner.colEnd
+    )
+  }
+
+  const canMergeRanges = (left: NormalizedRange, right: NormalizedRange): boolean => {
+    const sameRows = left.rowStart === right.rowStart && left.rowEnd === right.rowEnd
+    const sameColumns = left.colStart === right.colStart && left.colEnd === right.colEnd
+    // 只合併真正重疊的範圍（共用至少一個 cell），不合併僅相鄰（touching）的範圍。
+    // 這樣 Ctrl+點擊相鄰格時，各格保持獨立 range，不會被合併後觸發 onCellFocused 重置為單格。
+    const rowsOverlap = left.rowStart <= right.rowEnd && right.rowStart <= left.rowEnd
+    const columnsOverlap = left.colStart <= right.colEnd && right.colStart <= left.colEnd
+
+    if (isRangeContained(left, right) || isRangeContained(right, left)) return true
+    if (sameRows && columnsOverlap) return true
+    if (sameColumns && rowsOverlap) return true
+
+    return false
+  }
+
+  const mergeNormalizedRanges = (
+    left: NormalizedRange,
+    right: NormalizedRange,
+  ): Omit<NormalizedRange, 'columnIds'> => {
+    return {
+      rowStart: Math.min(left.rowStart, right.rowStart),
+      rowEnd: Math.max(left.rowEnd, right.rowEnd),
+      colStart: Math.min(left.colStart, right.colStart),
+      colEnd: Math.max(left.colEnd, right.colEnd),
+    }
+  }
+
+  const toCellRange = (range: Omit<NormalizedRange, 'columnIds'>): CellRange | null => {
+    const columnIds = getColumnIds()
+    const startColId = columnIds[range.colStart]
+    const endColId = columnIds[range.colEnd]
+    if (!startColId || !endColId) return null
+
+    return {
+      start: { rowIndex: range.rowStart, colId: startColId },
+      end: { rowIndex: range.rowEnd, colId: endColId },
+    }
+  }
+
+  const cloneRange = (range: CellRange): CellRange => ({
+    start: { ...range.start },
+    end: { ...range.end },
+  })
+
+  const cloneRanges = (ranges: CellRange[]): CellRange[] => ranges.map(cloneRange)
+
+  const mergeAdjacentRanges = (ranges: CellRange[]): CellRange[] => {
+    const pendingRanges = ranges
+      .map((range) => getNormalizedRange(range))
+      .filter((range): range is NormalizedRange => range !== null)
+
+    let didMerge = true
+    while (didMerge) {
+      didMerge = false
+
+      for (let leftIndex = 0; leftIndex < pendingRanges.length; leftIndex++) {
+        for (let rightIndex = leftIndex + 1; rightIndex < pendingRanges.length; rightIndex++) {
+          const left = pendingRanges[leftIndex]
+          const right = pendingRanges[rightIndex]
+
+          if (!canMergeRanges(left, right)) continue
+
+          const merged = mergeNormalizedRanges(left, right)
+          const columnIds = getColumnIds().slice(merged.colStart, merged.colEnd + 1)
+          pendingRanges.splice(leftIndex, 1, { ...merged, columnIds })
+          pendingRanges.splice(rightIndex, 1)
+          didMerge = true
+          break
+        }
+
+        if (didMerge) break
+      }
+    }
+
+    return pendingRanges
+      .map((range) => toCellRange(range))
+      .filter((range): range is CellRange => range !== null)
+  }
+
+  const mergeSelectedRanges = (preferredPoint: CellPoint | null = null) => {
+    selectedRanges.value = mergeAdjacentRanges(selectedRanges.value)
+
+    if (selectedRanges.value.length === 0) {
+      currentRangeIndex.value = -1
+      return
+    }
+
+    if (preferredPoint) {
+      const preferredIndex = selectedRanges.value.findIndex((range) =>
+        isPointInRange(preferredPoint, range),
+      )
+      currentRangeIndex.value = preferredIndex >= 0 ? preferredIndex : selectedRanges.value.length - 1
+      return
+    }
+
+    currentRangeIndex.value = Math.min(
+      Math.max(currentRangeIndex.value, 0),
+      selectedRanges.value.length - 1,
+    )
+  }
+
+  const removePointFromRange = (range: CellRange, point: CellPoint): CellRange[] => {
+    const normalized = getNormalizedRange(range)
+    const pointColIndex = getColumnIds().indexOf(point.colId)
+
+    if (!normalized || pointColIndex === -1 || !isPointInRange(point, range)) {
+      return [range]
+    }
+
+    const pieces: CellRange[] = []
+    const appendPiece = (piece: Omit<NormalizedRange, 'columnIds'>) => {
+      if (piece.rowStart > piece.rowEnd || piece.colStart > piece.colEnd) return
+
+      const cellRange = toCellRange(piece)
+      if (cellRange) pieces.push(cellRange)
+    }
+
+    appendPiece({
+      rowStart: normalized.rowStart,
+      rowEnd: point.rowIndex - 1,
+      colStart: normalized.colStart,
+      colEnd: normalized.colEnd,
+    })
+    appendPiece({
+      rowStart: point.rowIndex + 1,
+      rowEnd: normalized.rowEnd,
+      colStart: normalized.colStart,
+      colEnd: normalized.colEnd,
+    })
+    appendPiece({
+      rowStart: point.rowIndex,
+      rowEnd: point.rowIndex,
+      colStart: normalized.colStart,
+      colEnd: pointColIndex - 1,
+    })
+    appendPiece({
+      rowStart: point.rowIndex,
+      rowEnd: point.rowIndex,
+      colStart: pointColIndex + 1,
+      colEnd: normalized.colEnd,
+    })
+
+    return pieces
+  }
+
+  const removePointFromRanges = (ranges: CellRange[], point: CellPoint): CellRange[] => {
+    return ranges.flatMap((range) => removePointFromRange(range, point))
+  }
+
   const isPointInRange = (point: CellPoint, range: CellRange): boolean => {
     const normalized = getNormalizedRange(range)
     if (!normalized) return false
@@ -217,9 +472,21 @@
     )
   }
 
+  const isPointSelectedInRanges = (point: CellPoint, ranges: CellRange[]): boolean => {
+    return ranges.some((range) => isPointInRange(point, range))
+  }
+
   const isCellSelected = (rowIndex: number, colId: string): boolean => {
     const point = { rowIndex, colId }
-    return selectedRanges.value.some((range) => isPointInRange(point, range))
+    return isPointSelectedInRanges(point, selectedRanges.value)
+  }
+
+  const getActiveRange = (): CellRange | null => {
+    return (
+      selectedRanges.value[currentRangeIndex.value] ??
+      selectedRanges.value[selectedRanges.value.length - 1] ??
+      null
+    )
   }
 
   const focusCell = async (point: CellPoint) => {
@@ -227,6 +494,7 @@
     const column = getDisplayedColumns().find((item) => item.getColId() === point.colId)
 
     if (!api || !column) {
+      _suppressFocusSync = false
       return
     }
 
@@ -236,6 +504,19 @@
     api.setFocusedCell(point.rowIndex, column)
     // AG Grid 的 cellFocused 事件在 microtask 中觸發，需等待 nextTick 後再清除 flag
     // 否則 onCellFocused 會在 flag=false 時執行，導致多格選取被重置為單格
+    await nextTick()
+    _suppressFocusSync = false
+  }
+
+  const clearFocusedCell = async () => {
+    const api = gridApi.value
+    if (!api) {
+      _suppressFocusSync = false
+      return
+    }
+
+    _suppressFocusSync = true
+    api.clearFocusedCell()
     await nextTick()
     _suppressFocusSync = false
   }
@@ -256,16 +537,30 @@
   // ─── Fill Handle: Positioning ────────────────────────────────────────────────
 
   const getBottomRightCellElement = (range: CellRange): HTMLElement | null => {
-    const container = gridContainer.value
     const normalizedRange = getNormalizedRange(range)
 
-    if (!container || !normalizedRange) return null
+    if (!normalizedRange) return null
 
     const rowIndex = normalizedRange.rowEnd
     const colId = normalizedRange.columnIds[normalizedRange.columnIds.length - 1]
 
     // AG Grid renders cells with these attributes on the cell element
-    return container.querySelector<HTMLElement>(`[row-index="${rowIndex}"] [col-id="${colId}"]`)
+    return getCellElement(rowIndex, colId)
+  }
+
+  const computeClippedCellRect = (cellEl: HTMLElement): FillRect | null => {
+    const overlayRoot = getOverlayRoot()
+    const colId = cellEl.getAttribute('col-id')
+    if (!overlayRoot || !colId) return null
+
+    const clipRect = getSectionClipRect(getColumnSection(colId))
+    if (!clipRect) return null
+
+    const cellRect = cellEl.getBoundingClientRect()
+    const clippedRect = intersectClientRects(cellRect, clipRect)
+    if (!clippedRect) return null
+
+    return toOverlayRect(clippedRect, overlayRoot.getBoundingClientRect())
   }
 
   const updateFillHandlePosition = async () => {
@@ -278,21 +573,18 @@
     if (isSelecting.value) return
     // Use requestAnimationFrame to ensure AG Grid has finished rendering
     requestAnimationFrame(() => {
-      const container = gridContainer.value
-      const lastRange = selectedRanges.value[selectedRanges.value.length - 1]
-      const cellEl = getBottomRightCellElement(lastRange)
+      const activeRange = getActiveRange()
+      const cellEl = activeRange ? getBottomRightCellElement(activeRange) : null
+      const cellRect = cellEl ? computeClippedCellRect(cellEl) : null
 
-      if (!container || !cellEl) {
+      if (!cellRect) {
         fillHandlePos.value = null
         return
       }
 
-      const containerRect = container.getBoundingClientRect()
-      const cellRect = cellEl.getBoundingClientRect()
-
       fillHandlePos.value = {
-        left: cellRect.right - containerRect.left,
-        top: cellRect.bottom - containerRect.top,
+        left: cellRect.left + cellRect.width,
+        top: cellRect.top + cellRect.height,
       }
     })
   }
@@ -302,7 +594,7 @@
       updateSelectionRects()
       updateCopyRects()
       updateFillHandlePosition()
-      if (fillDragging.value) updateFillPreviewRect()
+      if (fillDragging.value) updateFillPreviewRects()
     })
   }
 
@@ -333,36 +625,47 @@
   // ─── Range & Copy Overlays ───────────────────────────────────────────────────
 
   /**
-   * Synchronously compute the bounding rect of a cell range relative to gridContainer.
+   * Synchronously compute visible range rects relative to the teleported overlay root.
+   * Ranges are split across pinned-left / center / pinned-right containers so
+   * frozen columns and viewport edges can clip independently.
    * No nextTick needed — cell positions don't change when selection state changes.
    */
-  const computeRangeRect = (range: CellRange): FillRect | null => {
-    const container = gridContainer.value
+  const computeRangeRects = (range: CellRange): FillRect[] => {
+    const overlayRoot = getOverlayRoot()
     const normalizedRange = getNormalizedRange(range)
-    if (!container || !normalizedRange) return null
+    if (!overlayRoot || !normalizedRange) return []
 
-    const containerRect = container.getBoundingClientRect()
-    const firstColId = normalizedRange.columnIds[0]
-    const lastColId = normalizedRange.columnIds[normalizedRange.columnIds.length - 1]
+    const overlayRootRect = overlayRoot.getBoundingClientRect()
 
-    const topLeftEl = container.querySelector<HTMLElement>(
-      `[row-index="${normalizedRange.rowStart}"] [col-id="${firstColId}"]`,
-    )
-    const bottomRightEl = container.querySelector<HTMLElement>(
-      `[row-index="${normalizedRange.rowEnd}"] [col-id="${lastColId}"]`,
-    )
+    return getColumnSegments(normalizedRange.columnIds)
+      .map((segment) => {
+        const topLeftEl = getBoundaryCellElement(
+          normalizedRange.rowStart,
+          segment.columnIds,
+          'start',
+        )
+        const bottomRightEl = getBoundaryCellElement(
+          normalizedRange.rowEnd,
+          segment.columnIds,
+          'end',
+        )
+        const clipRect = getSectionClipRect(segment.section)
 
-    if (!topLeftEl || !bottomRightEl) return null
+        if (!topLeftEl || !bottomRightEl || !clipRect) return null
 
-    const tlRect = topLeftEl.getBoundingClientRect()
-    const brRect = bottomRightEl.getBoundingClientRect()
+        const tlRect = topLeftEl.getBoundingClientRect()
+        const brRect = bottomRightEl.getBoundingClientRect()
+        const rangeRect = {
+          left: tlRect.left,
+          top: tlRect.top,
+          right: brRect.right,
+          bottom: brRect.bottom,
+        }
+        const clippedRect = intersectClientRects(rangeRect, clipRect)
 
-    return {
-      left: tlRect.left - containerRect.left,
-      top: tlRect.top - containerRect.top,
-      width: brRect.right - tlRect.left,
-      height: brRect.bottom - tlRect.top,
-    }
+        return clippedRect ? toOverlayRect(clippedRect, overlayRootRect) : null
+      })
+      .filter((rect): rect is FillRect => rect !== null)
   }
 
   const updateSelectionRects = () => {
@@ -373,16 +676,11 @@
       if (selectedRanges.value.length > 1) return true
       return range.start.rowIndex !== range.end.rowIndex || range.start.colId !== range.end.colId
     }
-    selectionRects.value = selectedRanges.value
-      .filter(needsOverlay)
-      .map((range) => computeRangeRect(range))
-      .filter((rect): rect is FillRect => rect !== null)
+    selectionRects.value = selectedRanges.value.filter(needsOverlay).flatMap(computeRangeRects)
   }
 
   const updateCopyRects = () => {
-    copyRects.value = copyRanges.value
-      .map((range) => computeRangeRect(range))
-      .filter((rect): rect is FillRect => rect !== null)
+    copyRects.value = copyRanges.value.flatMap(computeRangeRects)
   }
 
   const clearCopyState = () => {
@@ -480,8 +778,8 @@
     }
   }
 
-  const updateFillPreviewRect = () => {
-    fillPreviewRect.value = fillPreviewRange.value ? computeRangeRect(fillPreviewRange.value) : null
+  const updateFillPreviewRects = () => {
+    fillPreviewRects.value = fillPreviewRange.value ? computeRangeRects(fillPreviewRange.value) : []
   }
 
   const handleFillDragMove = (event: MouseEvent) => {
@@ -492,7 +790,7 @@
 
     const extended = computeFillExtendedRange(fillSourceRange.value, target)
     fillPreviewRange.value = extended
-    updateFillPreviewRect()
+    updateFillPreviewRects()
   }
 
   const onFillHandleMouseDown = (event: MouseEvent) => {
@@ -500,16 +798,16 @@
     event.preventDefault()
     event.stopPropagation()
 
-    const lastRange = selectedRanges.value[selectedRanges.value.length - 1]
-    if (!lastRange) return
+    const activeRange = getActiveRange()
+    if (!activeRange) return
 
     fillSourceRange.value = {
-      start: { ...lastRange.start },
-      end: { ...lastRange.end },
+      start: { ...activeRange.start },
+      end: { ...activeRange.end },
     }
     fillDragging.value = true
     fillPreviewRange.value = null
-    fillPreviewRect.value = null
+    fillPreviewRects.value = []
   }
 
   // ─── Fill Handle: Apply Fill ─────────────────────────────────────────────────
@@ -636,6 +934,7 @@
   })
 
   const handleMouseUp = () => {
+    _mouseDownPoint = null
     if (fillDragging.value) {
       if (fillPreviewRange.value) {
         applyFill()
@@ -643,28 +942,35 @@
       fillDragging.value = false
       fillSourceRange.value = null
       fillPreviewRange.value = null
-      fillPreviewRect.value = null
+      fillPreviewRects.value = []
       isSelecting.value = false
       currentRangeIndex.value = -1
+      _rangesBeforeModifiedMouseDown = null
     } else {
       const multiClickTarget = _lastMultiClickPoint
+      const shouldClearFocus = _clearFocusAfterMouseUp
       _lastMultiClickPoint = null
+      _clearFocusAfterMouseUp = false
+      _rangesBeforeModifiedMouseDown = null
+      const preferredPoint =
+        multiClickTarget ?? selectedRanges.value[currentRangeIndex.value]?.end ?? null
+      mergeSelectedRanges(preferredPoint)
 
-      nextTick(() => {
+      void nextTick(async () => {
         isSelecting.value = false
-        _suppressFocusSync = false
-        updateFillHandlePosition()
 
         // Ctrl+點擊後：明確把 focus 設置到最後點擊的格
-        // 此時 _suppressFocusSync 已為 false，但 onCellFocused 內部會因多範圍而賭回 (return early)
-        if (multiClickTarget && gridApi.value) {
-          const col = gridApi.value.getAllDisplayedColumns().find(
-            (c) => c.getColId() === multiClickTarget.colId
-          )
-          if (col) {
-            gridApi.value.setFocusedCell(multiClickTarget.rowIndex, col)
-          }
+        // 需走 focusCell() 的 suppression，否則相鄰 ranges 合併成單一多格 range 後，
+        // onCellFocused 會把它重置成單格。
+        if (multiClickTarget) {
+          await focusCell(multiClickTarget)
+        } else if (shouldClearFocus) {
+          await clearFocusedCell()
+        } else {
+          _suppressFocusSync = false
         }
+
+        updateFillHandlePosition()
       })
 
       const isSingleCell =
@@ -682,6 +988,11 @@
 
   // 記錄最後一次 Ctrl+點擊的格，用於 mouseup 後設定 focus
   let _lastMultiClickPoint: CellPoint | null = null
+  let _clearFocusAfterMouseUp = false
+  let _rangesBeforeModifiedMouseDown: CellRange[] | null = null
+  // 記錄 mousedown 起始格，用於 onCellMouseOver 中判斷是否已離開起始格（真正開始拖曳）
+  // 避免 Ctrl+點擊相鄰格時因 mouseover 意外擴展 range
+  let _mouseDownPoint: CellPoint | null = null
 
   const onCellMouseDown = (params: CellMouseDownEvent<GridRowData>) => {
     const event = params.event as MouseEvent
@@ -692,23 +1003,44 @@
 
     _suppressFocusSync = true
     isSelecting.value = true
+    _mouseDownPoint = { rowIndex: node.rowIndex, colId: column.getId() }
     const isMulti = event.ctrlKey || event.metaKey
-    const newPoint = { rowIndex: node.rowIndex, colId: column.getId() }
+    const newPoint: CellPoint = { rowIndex: node.rowIndex, colId: column.getId() }
+    const modifiedBaseRanges = cloneRanges(
+      _rangesBeforeModifiedMouseDown ?? selectedRanges.value,
+    )
 
-    if (event.shiftKey && selectedRanges.value.length > 0) {
+    if (event.shiftKey && modifiedBaseRanges.length > 0) {
       // Shift+點擊：擴展最後一個範圍的終點
+      selectedRanges.value = modifiedBaseRanges
       currentRangeIndex.value = selectedRanges.value.length - 1
       selectedRanges.value[currentRangeIndex.value].end = newPoint
       _lastMultiClickPoint = null
+      _clearFocusAfterMouseUp = false
     } else if (isMulti) {
-      // Ctrl+點擊：新增一個範圍，結束後需要讓最後點擊的格有 focus
-      selectedRanges.value.push({ start: newPoint, end: newPoint })
-      currentRangeIndex.value = selectedRanges.value.length - 1
-      _lastMultiClickPoint = newPoint
+      // Ctrl+點擊：已選取的格取消，未選取的格加入選取。
+      if (isPointSelectedInRanges(newPoint, modifiedBaseRanges)) {
+        selectedRanges.value = removePointFromRanges(modifiedBaseRanges, newPoint)
+        currentRangeIndex.value = -1
+
+        const nextActiveRange = getActiveRange()
+        _lastMultiClickPoint = nextActiveRange?.end ?? null
+        _clearFocusAfterMouseUp = !nextActiveRange
+      } else {
+        selectedRanges.value = [
+          ...modifiedBaseRanges,
+          { start: { ...newPoint }, end: { ...newPoint } },
+        ]
+        currentRangeIndex.value = selectedRanges.value.length - 1
+        _lastMultiClickPoint = newPoint
+        _clearFocusAfterMouseUp = false
+      }
     } else {
+      _rangesBeforeModifiedMouseDown = null
       selectedRanges.value = [{ start: newPoint, end: newPoint }]
       currentRangeIndex.value = 0
       _lastMultiClickPoint = null
+      _clearFocusAfterMouseUp = false
     }
 
     updateSelectionRects()
@@ -725,8 +1057,23 @@
     if (!isSelecting.value || currentRangeIndex.value === -1) return
     if (params.node.rowIndex === null) return
 
+    const overPoint: CellPoint = { rowIndex: params.node.rowIndex, colId: params.column.getId() }
+
+    // 防止 Ctrl+點擊相鄰格時意外擴展 range：
+    // 只有當滑鼠移動到「與 mousedown 不同的格」時，才開始拖曳擴展。
+    // 若仍停留在 mousedown 的同一格，則忽略此事件。
+    if (
+      _mouseDownPoint &&
+      overPoint.rowIndex === _mouseDownPoint.rowIndex &&
+      overPoint.colId === _mouseDownPoint.colId
+    ) {
+      return
+    }
+    // 一旦真正離開起始格，清除 anchor 使後續 mouseover 不再檢查
+    _mouseDownPoint = null
+
     const range = selectedRanges.value[currentRangeIndex.value]
-    range.end = { rowIndex: params.node.rowIndex, colId: params.column.getId() }
+    range.end = overPoint
 
     updateSelectionRects()
 
@@ -781,6 +1128,7 @@
     if (!getGridCellFromEventTarget(event.target)) return
 
     _suppressFocusSync = true
+    _rangesBeforeModifiedMouseDown = cloneRanges(selectedRanges.value)
   }
 
   const getCellRawValue = (rowNode: IRowNode<GridRowData>, column: Column): unknown => {
@@ -1547,11 +1895,7 @@
       @cell-value-changed="onCellValueChanged"
     />
 
-    <!-- 
-      Overlays are teleported into the AG Grid root so they respect internal layering.
-      We use a clip-path to ensure the selection border is hidden under the pinned columns
-      when scrolling, satisfying the "covered by frozen columns" requirement.
-    -->
+    <!-- Overlays are teleported into the AG Grid root so their coordinates match AG Grid internals. -->
     <Teleport v-if="gridReady && gridContainer" :to="gridContainer.querySelector('.ag-root')">
       <div
         class="ag-custom-overlays-container"
@@ -1563,7 +1907,6 @@
           height: '100%',
           pointerEvents: 'none',
           zIndex: 10,
-          clipPath: `inset(0 ${getPinnedRightWidth()}px 0 ${getPinnedLeftWidth()}px)`,
         }"
       >
         <!-- Fill Handle: small square at bottom-right corner of selection -->
@@ -1576,13 +1919,15 @@
 
         <!-- Fill Preview: dashed overlay shown while dragging fill handle -->
         <div
-          v-if="fillDragging && fillPreviewRect"
+          v-for="(rect, i) in fillPreviewRects"
+          v-show="fillDragging"
+          :key="'fill-' + i"
           class="fill-preview"
           :style="{
-            left: fillPreviewRect.left + 'px',
-            top: fillPreviewRect.top + 'px',
-            width: fillPreviewRect.width + 'px',
-            height: fillPreviewRect.height + 'px',
+            left: rect.left + 'px',
+            top: rect.top + 'px',
+            width: rect.width + 'px',
+            height: rect.height + 'px',
           }"
         />
 
