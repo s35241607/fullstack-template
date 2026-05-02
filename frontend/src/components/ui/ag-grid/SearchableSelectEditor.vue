@@ -1,13 +1,9 @@
 <script setup lang="ts">
   import { ref, computed, nextTick, watch } from 'vue'
-  import type { ICellEditorParams } from 'ag-grid-community'
   import { Check, Search } from 'lucide-vue-next'
+  import type { SearchableSelectEditorParams } from './types'
 
-  interface SearchableSelectParams extends ICellEditorParams {
-    values?: string[]
-  }
-
-  const props = defineProps<{ params: SearchableSelectParams }>()
+  const props = defineProps<{ params: SearchableSelectEditorParams }>()
 
   const options = computed(() => props.params.values ?? [])
   const currentValue = ref<string>(String(props.params.value ?? ''))

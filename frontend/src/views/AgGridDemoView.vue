@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { ref } from 'vue'
-  import AgGrid from '@/components/ui/ag-grid/AgGrid.vue'
-  import SearchableSelectEditor from '@/components/ui/ag-grid/SearchableSelectEditor.vue'
+  import { AgGrid, SearchableSelectEditor, type AgGridColumnDef } from '@/components/ui/ag-grid'
   import { Button } from '@/components/ui/button'
   import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
   import { Copy, HelpCircle, Grid, Info } from 'lucide-vue-next'
@@ -9,7 +8,7 @@
 
   const gridRef = ref()
 
-  const columnDefs = ref([
+  const columnDefs = ref<AgGridColumnDef[]>([
     {
       field: 'id',
       headerName: 'ID',
@@ -107,80 +106,38 @@
     },
   ])
 
-  const rowData = ref([
-    {
-      id: 1,
-      name: 'MacBook Pro 14"',
-      category: '電子產品',
-      price: 69900,
-      status: '有庫存',
-      updatedAt: '2024-01-01',
-      description: 'Apple M3 Pro 晶片，14 吋顯示器，18GB 統一記憶體',
-    },
-    {
-      id: 2,
-      name: 'iPad Air 11"',
-      category: '電子產品',
-      price: 19900,
-      status: '有庫存',
-      updatedAt: '2024-01-05',
-      description: 'M2 晶片，11 吋顯示器，Apple Pencil Pro 支援',
-    },
-    {
-      id: 3,
-      name: 'iPhone 15 Pro',
-      category: '電子產品',
-      price: 36900,
-      status: '缺貨',
-      updatedAt: '2024-01-10',
-      description: '鈦金屬設計，A17 Pro 晶片，48MP 主相機',
-    },
-    {
-      id: 4,
-      name: 'AirPods Pro 2',
-      category: '配件',
-      price: 7490,
-      status: '有庫存',
-      updatedAt: '2024-01-15',
-      description: '主動式降噪，H2 晶片，USB-C 充電盒',
-    },
-    {
-      id: 5,
-      name: 'Magic Mouse',
-      category: '配件',
-      price: 2290,
-      status: '有庫存',
-      updatedAt: '2024-01-20',
-      description: '多點觸控表面，藍牙連線',
-    },
-    {
-      id: 6,
-      name: 'Studio Display',
-      category: '顯示器',
-      price: 45900,
-      status: '低庫存',
-      updatedAt: '2024-01-25',
-      description: '27 吋 5K Retina 顯示器，12MP 超廣角相機',
-    },
-    {
-      id: 7,
-      name: 'Apple Watch Ultra 2',
-      category: '配件',
-      price: 27900,
-      status: '有庫存',
-      updatedAt: '2024-01-28',
-      description: '航太等級鈦金屬，S9 SiP 晶片',
-    },
-    {
-      id: 8,
-      name: 'Mac Studio',
-      category: '電子產品',
-      price: 64900,
-      status: '有庫存',
-      updatedAt: '2024-02-01',
-      description: 'M2 Max 晶片，精巧高效的桌上型電腦',
-    },
-  ])
+  const generateMockData = (count = 100) => {
+    const categories = ['電子產品', '配件', '顯示器']
+    const statuses = ['有庫存', '缺貨', '低庫存']
+    const baseNames = [
+      'MacBook Pro',
+      'iPad Air',
+      'iPhone 15',
+      'AirPods Pro',
+      'Magic Mouse',
+      'Studio Display',
+    ]
+
+    return Array.from({ length: count }, (_, index) => {
+      const id = index + 1
+      // 使用餘數讓資料規律循環，隨機數讓價格更有變化
+      const category = categories[index % categories.length]
+      const name = `${baseNames[index % baseNames.length]} (v${Math.floor(index / baseNames.length) + 1})`
+
+      return {
+        id: id,
+        name: name,
+        category: category,
+        price: Math.floor(Math.random() * (80000 - 2000 + 1)) + 2000,
+        status: statuses[index % statuses.length],
+        updatedAt: new Date(2024, 0, (index % 30) + 1).toISOString().split('T')[0],
+        description: `這是第 ${id} 筆測試資料的詳細描述，分類屬於 ${category}。`,
+      }
+    })
+  }
+
+  // 使用方式：
+  const rowData = generateMockData(100)
 
   const handleCopy = () => {
     if (gridRef.value) {

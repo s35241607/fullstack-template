@@ -8,8 +8,61 @@
 |------|------|
 | `AgGrid.vue` | 主要封裝元件，包含所有 Excel 風格功能 |
 | `SearchableSelectEditor.vue` | 可搜尋下拉選單 Cell Editor（popup 彈出式） |
+| `types.ts` | 封裝對外使用的 row / column / editor 型別 |
 | `index.ts` | 統一匯出入口 |
 | `UT.md` | Excel 功能驗證清單 (測試用例) |
+
+---
+
+## 可復用方式
+
+這個資料表已經可以作為獨立元件搬到其他專案使用。外部專案主要替換三件事：
+
+- `rowData`：任意列資料陣列
+- `columnDefs`：AG Grid Community 的欄位設定，可為每個欄位指定 editor、formatter、renderer
+- `gridOptions`：不同專案需要的排序、過濾、context、事件等 AG Grid 選項
+
+```ts
+import {
+  AgGrid,
+  SearchableSelectEditor,
+  type AgGridColumnDef,
+  type AgGridRowData,
+} from '@/components/ui/ag-grid'
+
+const rowData: AgGridRowData[] = [
+  { name: 'MacBook Pro', status: '有庫存' },
+]
+
+const columnDefs: AgGridColumnDef[] = [
+  { field: 'name', headerName: '產品名稱' },
+  {
+    field: 'status',
+    headerName: '狀態',
+    cellEditor: SearchableSelectEditor,
+    cellEditorPopup: true,
+    cellEditorParams: {
+      values: ['有庫存', '低庫存', '缺貨'],
+    },
+  },
+]
+```
+
+```vue
+<AgGrid :row-data="rowData" :column-defs="columnDefs" height="500px" />
+```
+
+若不同專案有不同下拉清單，只需要在各欄位的 `cellEditorParams.values` 傳入該專案自己的選項。
+
+### API-driven Demo
+
+`/ag-grid-api-demo` 展示建議的 API 整合方式：
+
+- `AgGrid.vue` 保持純 UI/互動封裝，只接收 `rowData`、`columnDefs`、`gridOptions`
+- 頁面層負責呼叫資料 API，並把分頁、排序、篩選條件轉成 query payload
+- 下拉清單由 lookup API 取得，再注入外部篩選器與 `SearchableSelectEditor` 的 `cellEditorParams.values`
+
+Mock API 位於 `src/services/agGridMockApi.ts`，可作為日後串真實後端時的 payload 參考。
 
 ---
 
@@ -27,14 +80,14 @@ AG Grid Community 版本不含原生範圍選取（Enterprise 功能），本元
 
 **實作細節：**
 - `selectedRanges`：`CellRange[]`，每個 range 由 `start`/`end` CellPoint 組成
-- `rangeSelectedCells`：`Record<string, boolean>` 快速查表，供 `cellClassRules` 套用 `custom-range-selected` 樣式
+- `cellClassRules` 透過 `isCellSelected()` 判斷選取狀態並套用 `custom-range-selected` 樣式
 - `onCellFocused` 事件監聽 AG Grid 原生 focus 移動（方向鍵），同步更新 `selectedRanges`
 - `_suppressFocusSync` flag（非 reactive）防止滑鼠選取與程式呼叫 `setFocusedCell` 時觸發迴圈
 
 **視覺呈現：**
 - 單格選取：沿用 `.ag-cell-focus` CSS border（primary 色）
 - 多格範圍：`selection-range-overlay` div（藍色外框）覆蓋在 grid 之上
-- 選取範圍背景：`custom-range-selected` class → `rgba(37, 99, 235, 0.12)` 淡藍色
+- 選取範圍背景：`custom-range-selected` class 使用 `hsl(var(--primary))` 淡色混合，跟隨主題色
 
 ---
 
@@ -249,3 +302,5 @@ reka-ui 的 `ListboxRoot`（`Command` 內部）有自己的 auto-focus 行為，
 - [x] **CSS 硬編碼顏色**：所有 `rgba(37, 99, 235, ...)` 已改為 `color-mix(in srgb, hsl(var(--primary)) X%, transparent)`，換主題時自動跟隨。
 - [x] **`onCellMouseOver` 拖曳效能**：拖曳選取時每移過一格就完整重繪，改用 `requestAnimationFrame` 節流後大幅提升流暢度。
 - [x] **滾動 layout thrashing**：`onBodyScroll` 加入 RAF 節流，防止滾動時重複觸發 DOM 計算。
+- [x] **Ctrl+點擊未保留第一個點選格**：在 wrapper 的 `mousedown.capture` 先暫停 focus 同步，避免 AG Grid 的 `cell-focused` 在 `cell-mouse-down` 前覆蓋既有單格選取。
+- [x] **編輯模式仍顯示 Fill Handle**：加入 `isEditing` 狀態並監聽 `cell-editing-started/stopped`，編輯期間隱藏右下角填充柄。

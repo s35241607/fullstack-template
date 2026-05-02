@@ -12,7 +12,6 @@
     type ColDef,
     type Column,
     type GridApi,
-    type GridOptions,
     type GridReadyEvent,
     type IRowNode,
     type SuppressPasteCallbackParams,
@@ -21,12 +20,15 @@
   } from 'ag-grid-community'
   import { computed, ref, onUnmounted, nextTick, watch } from 'vue'
   import { useDark } from '@vueuse/core'
+  import type {
+    AgGridColumnDef as GridColumnDef,
+    AgGridOptions as GridOptions,
+    AgGridRowData as GridRowData,
+  } from './types'
 
   // Register all required community modules
   ModuleRegistry.registerModules([AllCommunityModule])
 
-  type GridRowData = Record<string, unknown>
-  type GridColumnDef = ColDef<GridRowData>
   type CellPoint = { rowIndex: number; colId: string }
   type CellRange = { start: CellPoint; end: CellPoint }
   type ClipboardMatrix = string[][]
@@ -35,7 +37,7 @@
     rowData: GridRowData[]
     columnDefs: GridColumnDef[]
     height?: string | number
-    gridOptions?: GridOptions<GridRowData>
+    gridOptions?: GridOptions
   }
 
   withDefaults(defineProps<Props>(), {
@@ -74,6 +76,7 @@
   const gridContainer = ref<HTMLElement | null>(null)
   const gridApi = ref<GridApi<GridRowData> | null>(null)
   const isSelecting = ref(false)
+  const isEditing = ref(false)
   const selectedRanges = ref<CellRange[]>([])
   const currentRangeIndex = ref(-1)
   const gridReady = ref(false)
@@ -178,10 +181,6 @@
     return getDisplayedColumns().map((column) => column.getColId())
   }
 
-  const getCellId = (point: CellPoint): string => {
-    return `${point.rowIndex}:${point.colId}`
-  }
-
   const getNormalizedRange = (range: CellRange) => {
     const columnIds = getColumnIds()
     const startColumnIndex = columnIds.indexOf(range.start.colId)
@@ -270,7 +269,7 @@
   }
 
   const updateFillHandlePosition = async () => {
-    if (selectedRanges.value.length === 0) {
+    if (selectedRanges.value.length === 0 || isEditing.value) {
       fillHandlePos.value = null
       return
     }
@@ -753,6 +752,37 @@
     ])
   }
 
+  const onCellEditingStarted = () => {
+    isEditing.value = true
+    fillHandlePos.value = null
+  }
+
+  const onCellEditingStopped = () => {
+    nextTick(() => {
+      isEditing.value = (gridApi.value?.getEditingCells().length ?? 0) > 0
+      if (!isEditing.value) {
+        updateFillHandlePosition()
+      }
+    })
+  }
+
+  const getGridCellFromEventTarget = (target: EventTarget | null): HTMLElement | null => {
+    if (!(target instanceof HTMLElement)) return null
+
+    const cell = target.closest<HTMLElement>('.ag-cell[col-id]')
+    if (!cell || !gridContainer.value?.contains(cell)) return null
+
+    return cell
+  }
+
+  const onGridMouseDownCapture = (event: MouseEvent) => {
+    if (event.button !== 0) return
+    if (!event.shiftKey && !event.ctrlKey && !event.metaKey) return
+    if (!getGridCellFromEventTarget(event.target)) return
+
+    _suppressFocusSync = true
+  }
+
   const getCellRawValue = (rowNode: IRowNode<GridRowData>, column: Column): unknown => {
     if (!gridApi.value || !rowNode) return undefined
     // AG Grid v31+ uses getCellValue with an object parameter
@@ -783,7 +813,7 @@
           column,
           colDef,
           api: gridApi.value!,
-          context: gridApi.value?.getGridOptions()?.context,
+          context: gridApi.value?.getGridOption('context'),
         })
       } catch (e) {
         console.warn('Value formatter failed during copy:', e)
@@ -796,40 +826,6 @@
     }
 
     return String(value)
-  }
-
-  const buildRangeClipboardRows = (range: CellRange, columnMap: Map<string, Column>): string[] => {
-    const api = gridApi.value
-    const normalizedRange = getNormalizedRange(range)
-
-    if (!api || !normalizedRange) {
-      return []
-    }
-
-    const rows: string[] = new Array(normalizedRange.rowEnd - normalizedRange.rowStart + 1)
-
-    for (
-      let rowIndex = normalizedRange.rowStart;
-      rowIndex <= normalizedRange.rowEnd;
-      rowIndex += 1
-    ) {
-      const rowNode = api.getDisplayedRowAtIndex(rowIndex)
-      if (!rowNode) {
-        rows[rowIndex - normalizedRange.rowStart] = ''
-        continue
-      }
-
-      const rowValues = normalizedRange.columnIds.map((colId) => {
-        const column = columnMap.get(colId)
-        if (!column) return ''
-        const value = getCellRawValue(rowNode, column)
-        return formatClipboardValue({ rowNode, column, value })
-      })
-
-      rows[rowIndex - normalizedRange.rowStart] = rowValues.join('\t')
-    }
-
-    return rows
   }
 
   const buildClipboardText = (): string => {
@@ -1265,7 +1261,7 @@
         api.startEditingCell({
           rowIndex: focusedCell.rowIndex,
           colKey: focusedCell.column,
-          charPress: '',
+          key: '',
         })
         return
       }
@@ -1437,8 +1433,7 @@
 
   const onCellKeyDown = (params: CellKeyDownEvent<GridRowData>) => {
     const event = params.event as KeyboardEvent
-    const rowIndex = params.node.rowIndex
-    const { column, api } = params
+    const { api } = params
 
     if (event.key === 'Escape') {
       clearSelections()
@@ -1521,6 +1516,7 @@
     class="w-full overflow-hidden border rounded-xl shadow-sm transition-colors duration-300"
     :class="isDark ? 'border-slate-700/50' : 'border-slate-200'"
     :style="{ height: typeof height === 'number' ? height + 'px' : height, position: 'relative' }"
+    @mousedown.capture="onGridMouseDownCapture"
     @keydown.capture="onKeyDownCapture"
   >
     <AgGridVue
@@ -1546,6 +1542,8 @@
       @cell-mouse-down="onCellMouseDown"
       @cell-mouse-over="onCellMouseOver"
       @cell-focused="onCellFocused"
+      @cell-editing-started="onCellEditingStarted"
+      @cell-editing-stopped="onCellEditingStopped"
       @cell-value-changed="onCellValueChanged"
     />
 
@@ -1570,7 +1568,7 @@
       >
         <!-- Fill Handle: small square at bottom-right corner of selection -->
         <div
-          v-if="fillHandlePos && selectedRanges.length > 0 && !fillDragging && !isSelecting"
+          v-if="fillHandlePos && selectedRanges.length > 0 && !fillDragging && !isSelecting && !isEditing"
           class="fill-handle"
           :style="{ left: fillHandlePos.left + 'px', top: fillHandlePos.top + 'px' }"
           @mousedown="onFillHandleMouseDown"

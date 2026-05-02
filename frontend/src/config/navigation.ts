@@ -1,4 +1,12 @@
-import { Info, LayoutDashboard, PackageSearch, Shapes, Grid, type LucideIcon } from 'lucide-vue-next'
+import {
+  Database,
+  Info,
+  LayoutDashboard,
+  PackageSearch,
+  Shapes,
+  Grid,
+  type LucideIcon,
+} from 'lucide-vue-next'
 
 export interface AppNavItem {
   id: string
@@ -55,6 +63,13 @@ export const appNavGroups: AppNavGroup[] = [
         path: '/ag-grid-demo',
         icon: Grid,
         description: 'AG Grid 整合與功能展示',
+      },
+      {
+        id: 'ag-grid-api-demo',
+        name: 'AG Grid API 展示',
+        path: '/ag-grid-api-demo',
+        icon: Database,
+        description: 'AG Grid 分頁查詢與動態下拉展示',
       },
       {
         id: 'demo',
