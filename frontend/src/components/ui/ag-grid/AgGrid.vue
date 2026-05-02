@@ -12,6 +12,7 @@
     type ColDef,
     type Column,
     type GridApi,
+    type GridOptions,
     type GridReadyEvent,
     type IRowNode,
     type SuppressPasteCallbackParams,
@@ -34,7 +35,7 @@
     rowData: GridRowData[]
     columnDefs: GridColumnDef[]
     height?: string | number
-    gridOptions?: Record<string, unknown>
+    gridOptions?: GridOptions<GridRowData>
   }
 
   withDefaults(defineProps<Props>(), {
@@ -76,6 +77,9 @@
   const selectedRanges = ref<CellRange[]>([])
   const currentRangeIndex = ref(-1)
   const gridReady = ref(false)
+
+  // ResizeObserver — 宣告在模組層級，以便 onUnmounted 中清除（避免記憶體洩漏）
+  let resizeObserver: ResizeObserver | null = null
 
   // Fill handle state
   type FillHandlePos = { left: number; top: number }
@@ -121,6 +125,9 @@
       if (!rowNode || !column) continue
       rowNode.setDataValue(column, oldValue, 'undo')
     }
+
+    // 必須強制重繪，否則 cellClassRules 不會重新評估，視覺上看起來像是沒有反應
+    api.refreshCells({ force: true })
   }
 
   const applyRedo = () => {
@@ -141,6 +148,8 @@
       if (!rowNode || !column) continue
       rowNode.setDataValue(column, newValue, 'redo')
     }
+
+    api.refreshCells({ force: true })
   }
 
   const getDisplayedColumns = (): Column[] => {
@@ -214,7 +223,7 @@
     return selectedRanges.value.some((range) => isPointInRange(point, range))
   }
 
-  const focusCell = (point: CellPoint) => {
+  const focusCell = async (point: CellPoint) => {
     const api = gridApi.value
     const column = getDisplayedColumns().find((item) => item.getColId() === point.colId)
 
@@ -226,6 +235,9 @@
     api.ensureIndexVisible(point.rowIndex)
     api.ensureColumnVisible(column)
     api.setFocusedCell(point.rowIndex, column)
+    // AG Grid 的 cellFocused 事件在 microtask 中觸發，需等待 nextTick 後再清除 flag
+    // 否則 onCellFocused 會在 flag=false 時執行，導致多格選取被重置為單格
+    await nextTick()
     _suppressFocusSync = false
   }
 
@@ -302,13 +314,22 @@
 
   let scrollViewport: Element | null = null
 
+  // RAF ID for scroll handler throttling
+  let _scrollRafId: number | null = null
+
+  // AG Grid 原生的 @body-scroll 事件（包含溭動區與凍結欄滝動）
+  // 用 requestAnimationFrame 節流，防止滚動時 layout thrashing
   const onBodyScroll = () => {
-    updateAllRects()
+    if (_scrollRafId !== null) cancelAnimationFrame(_scrollRafId)
+    _scrollRafId = requestAnimationFrame(() => {
+      updateAllRects()
+      _scrollRafId = null
+    })
   }
 
-  const onBodyViewportScroll = () => {
-    updateAllRects()
-  }
+  // onBodyViewportScroll 已不需要（改由 AG Grid @body-scroll 統一處理）
+  // 保留時需外部事件符讙使用
+  const onBodyViewportScroll = () => onBodyScroll()
 
   // ─── Range & Copy Overlays ───────────────────────────────────────────────────
 
@@ -600,7 +621,7 @@
       scrollViewport?.addEventListener('scroll', onBodyViewportScroll, { passive: true })
 
       if (gridContainer.value) {
-        const resizeObserver = new ResizeObserver(() => {
+        resizeObserver = new ResizeObserver(() => {
           updateAllRects()
         })
         resizeObserver.observe(gridContainer.value)
@@ -612,12 +633,10 @@
     window.removeEventListener('mouseup', handleMouseUp)
     window.removeEventListener('mousemove', handleFillDragMove)
     scrollViewport?.removeEventListener('scroll', onBodyViewportScroll)
+    resizeObserver?.disconnect()
   })
 
   const handleMouseUp = () => {
-    isSelecting.value = false
-    currentRangeIndex.value = -1
-
     if (fillDragging.value) {
       if (fillPreviewRange.value) {
         applyFill()
@@ -626,16 +645,29 @@
       fillSourceRange.value = null
       fillPreviewRange.value = null
       fillPreviewRect.value = null
+      isSelecting.value = false
+      currentRangeIndex.value = -1
     } else {
-      // Selection drag just ended — now safe to show fill handle at final position
-      nextTick(() => {
-        _suppressFocusSync = false
-      })
-      updateFillHandlePosition()
+      const multiClickTarget = _lastMultiClickPoint
+      _lastMultiClickPoint = null
 
-      // Optimization: Avoid refreshing if it's a simple click on an already focused cell
-      // to preserve the double-click event chain.
-      const focusedCell = gridApi.value?.getFocusedCell()
+      nextTick(() => {
+        isSelecting.value = false
+        _suppressFocusSync = false
+        updateFillHandlePosition()
+
+        // Ctrl+點擊後：明確把 focus 設置到最後點擊的格
+        // 此時 _suppressFocusSync 已為 false，但 onCellFocused 內部會因多範圍而賭回 (return early)
+        if (multiClickTarget && gridApi.value) {
+          const col = gridApi.value.getAllDisplayedColumns().find(
+            (c) => c.getColId() === multiClickTarget.colId
+          )
+          if (col) {
+            gridApi.value.setFocusedCell(multiClickTarget.rowIndex, col)
+          }
+        }
+      })
+
       const isSingleCell =
         selectedRanges.value.length === 1 &&
         selectedRanges.value[0].start.rowIndex === selectedRanges.value[0].end.rowIndex &&
@@ -648,6 +680,9 @@
       updateSelectionRects()
     }
   }
+
+  // 記錄最後一次 Ctrl+點擊的格，用於 mouseup 後設定 focus
+  let _lastMultiClickPoint: CellPoint | null = null
 
   const onCellMouseDown = (params: CellMouseDownEvent<GridRowData>) => {
     const event = params.event as MouseEvent
@@ -662,32 +697,30 @@
     const newPoint = { rowIndex: node.rowIndex, colId: column.getId() }
 
     if (event.shiftKey && selectedRanges.value.length > 0) {
-      // Ensure currentRangeIndex points to the last range when extending with shift
+      // Shift+點擊：擴展最後一個範圍的終點
       currentRangeIndex.value = selectedRanges.value.length - 1
       selectedRanges.value[currentRangeIndex.value].end = newPoint
+      _lastMultiClickPoint = null
     } else if (isMulti) {
+      // Ctrl+點擊：新增一個範圍，結束後需要讓最後點擊的格有 focus
       selectedRanges.value.push({ start: newPoint, end: newPoint })
       currentRangeIndex.value = selectedRanges.value.length - 1
+      _lastMultiClickPoint = newPoint
     } else {
       selectedRanges.value = [{ start: newPoint, end: newPoint }]
       currentRangeIndex.value = 0
+      _lastMultiClickPoint = null
     }
-
-    const focusedCell = params.api.getFocusedCell()
-    const isAlreadyFocused =
-      focusedCell && focusedCell.rowIndex === node.rowIndex && focusedCell.column === column
 
     updateSelectionRects()
 
-    // To support double-click to edit, we MUST NOT refresh the cells on mousedown
-    // because that destroys the DOM element and prevents the browser from
-    // recognizing the second click of a double-click on the original element.
-    // We only refresh on mouseover (during drag) and on mouseup.
     if (isMulti || event.shiftKey) {
-      // For multi-select or shift, we can refresh as double-click is less expected
       params.api.refreshCells({ force: true })
     }
   }
+
+  // RAF ID for throttling cell refresh during mouse-drag selection
+  let _rafRefreshId: number | null = null
 
   const onCellMouseOver = (params: CellMouseOverEvent<GridRowData>) => {
     if (!isSelecting.value || currentRangeIndex.value === -1) return
@@ -697,7 +730,13 @@
     range.end = { rowIndex: params.node.rowIndex, colId: params.column.getId() }
 
     updateSelectionRects()
-    params.api.refreshCells({ force: true })
+
+    // Throttle via requestAnimationFrame to avoid refreshing every single cell during drag
+    if (_rafRefreshId !== null) cancelAnimationFrame(_rafRefreshId)
+    _rafRefreshId = requestAnimationFrame(() => {
+      params.api.refreshCells({ force: true })
+      _rafRefreshId = null
+    })
   }
 
   const onCellValueChanged = (params: CellValueChangedEvent<GridRowData>) => {
@@ -804,8 +843,39 @@
     const columnMap = new Map(displayedColumns.map((column) => [column.getColId(), column]))
 
     if (selectedRanges.value.length > 0) {
-      return selectedRanges.value
-        .flatMap((range) => buildRangeClipboardRows(range, columnMap))
+      // 建立所有被選取的 cell 座標（去重），然後按 row → col 排序產出 TSV
+      const allColumnIds = getColumnIds()
+      // key: "rowIndex:colId", value: formatted string
+      const cellValues = new Map<string, string>()
+      const rowSet = new Set<number>()
+
+      for (const range of selectedRanges.value) {
+        const normalized = getNormalizedRange(range)
+        if (!normalized) continue
+        for (let r = normalized.rowStart; r <= normalized.rowEnd; r++) {
+          rowSet.add(r)
+          const rowNode = api.getDisplayedRowAtIndex(r)
+          if (!rowNode) continue
+          for (const colId of normalized.columnIds) {
+            const key = `${r}:${colId}`
+            if (cellValues.has(key)) continue
+            const column = columnMap.get(colId)
+            if (!column) continue
+            const value = getCellRawValue(rowNode, column)
+            cellValues.set(key, formatClipboardValue({ rowNode, column, value }))
+          }
+        }
+      }
+
+      const sortedRows = Array.from(rowSet).sort((a, b) => a - b)
+
+      // 找出所有被涵蓋的欄位（保持顯示順序）
+      const coveredColIds = allColumnIds.filter((colId) =>
+        sortedRows.some((r) => cellValues.has(`${r}:${colId}`))
+      )
+
+      return sortedRows
+        .map((r) => coveredColIds.map((colId) => cellValues.get(`${r}:${colId}`) ?? '').join('\t'))
         .join('\n')
     }
 
@@ -1076,6 +1146,79 @@
    * async function 在遇到第一個 await 前仍屬同步，因此時序是正確的。
    */
   const onKeyDownCapture = async (event: KeyboardEvent) => {
+    // ─── Shift+Arrow: 範圍選取擴展 ──────────────────────────────────────────
+    // 必須在 capture 階段處理，因為 AG Grid 會在 bubble 階段內部處理箭頭鍵導航，
+    // 導致 focus 移動後觸發 onCellFocused 重置 selectedRanges。
+    // 在 capture 階段攔截就能完全阻止 AG Grid 看到此事件。
+    if (
+      event.shiftKey &&
+      !event.ctrlKey && !event.metaKey && !event.altKey &&
+      ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)
+    ) {
+      const api = gridApi.value
+      if (!api) return
+      if (isClipboardEventFromEditor(event.target)) return
+      if (api.getEditingCells().length > 0) return
+
+      const focusedCell = api.getFocusedCell()
+      if (!focusedCell || focusedCell.rowIndex === null) return
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const focusRowIndex = focusedCell.rowIndex
+      const focusColId = focusedCell.column.getColId()
+
+      // 確保有範圍可擴展
+      if (selectedRanges.value.length === 0) {
+        const anchor = { rowIndex: focusRowIndex, colId: focusColId }
+        selectedRanges.value = [{ start: anchor, end: anchor }]
+        currentRangeIndex.value = 0
+      } else if (currentRangeIndex.value === -1) {
+        currentRangeIndex.value = selectedRanges.value.length - 1
+      }
+
+      const range = selectedRanges.value[currentRangeIndex.value]
+      if (!range) return
+
+      // 若範圍是單格且與 focused cell 不匹配，以 focused cell 重建 anchor
+      if (
+        range.start.rowIndex === range.end.rowIndex &&
+        range.start.colId === range.end.colId &&
+        (range.start.rowIndex !== focusRowIndex || range.start.colId !== focusColId)
+      ) {
+        const anchor = { rowIndex: focusRowIndex, colId: focusColId }
+        selectedRanges.value[currentRangeIndex.value] = { start: anchor, end: anchor }
+      }
+
+      const liveRange = selectedRanges.value[currentRangeIndex.value]
+
+      let nextRowIndex = liveRange.end.rowIndex
+      const columnIds = api.getAllDisplayedColumns().map((col) => col.getColId())
+      let colIdx = columnIds.indexOf(liveRange.end.colId)
+
+      if (event.key === 'ArrowUp') nextRowIndex = Math.max(0, nextRowIndex - 1)
+      if (event.key === 'ArrowDown') nextRowIndex = Math.min(api.getDisplayedRowCount() - 1, nextRowIndex + 1)
+      if (event.key === 'ArrowLeft') colIdx = Math.max(0, colIdx - 1)
+      if (event.key === 'ArrowRight') colIdx = Math.min(columnIds.length - 1, colIdx + 1)
+
+      liveRange.end = { rowIndex: nextRowIndex, colId: columnIds[colIdx] }
+      updateSelectionRects()
+      api.refreshCells({ force: true })
+
+      api.ensureIndexVisible(liveRange.end.rowIndex)
+      api.ensureColumnVisible(liveRange.end.colId)
+      return
+    }
+
+    // Escape: 清除複製狀態（螞蟻行軍）。若在編輯中則不干涉，讓 AG Grid 自己處理取消編輯
+    if (event.key === 'Escape' && !isClipboardEventFromEditor(event.target)) {
+      if (copyRanges.value.length > 0) {
+        clearCopyState()
+      }
+      return
+    }
+
     // Enter: 不在 editor 內 → 啟動編輯；在 editor 內 → 讓 editor 自己處理（不干涉）
     if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
       const api = gridApi.value
@@ -1165,7 +1308,9 @@
       return
     }
 
-    if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey) {
+    // Ctrl/Cmd 一定必須存在，且不能是 Alt 組合
+    // 注意：此處保留 shiftKey 允許通達，地 Ctrl+Shift+Z 能正常觸發 Redo
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) {
       return
     }
 
@@ -1181,10 +1326,7 @@
         api.stopEditing(false)
       }
 
-      if (
-        event.shiftKey ||
-        (navigator.platform.toUpperCase().indexOf('MAC') >= 0 && event.shiftKey)
-      ) {
+      if (event.shiftKey) {
         // Redo (Ctrl+Shift+Z or Cmd+Shift+Z)
         if (redoStack.length > 0) {
           event.preventDefault()
@@ -1316,50 +1458,13 @@
         currentRangeIndex.value = 0
         updateSelectionRects()
         api.refreshCells({ force: true })
+        // 更新 fillHandle 位置（Ctrl+A 後需顯示在右下角最後一格）
+        updateAllRects()
       }
       return
     }
 
-    if (event.shiftKey && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-      if (rowIndex === null) {
-        return
-      }
-
-      event.preventDefault()
-
-      if (selectedRanges.value.length === 0) {
-        const point = { rowIndex, colId: column.getColId() }
-        selectedRanges.value.push({ start: point, end: point })
-        currentRangeIndex.value = 0
-      }
-
-      if (currentRangeIndex.value === -1 && selectedRanges.value.length > 0) {
-        currentRangeIndex.value = selectedRanges.value.length - 1
-      }
-
-      const range = selectedRanges.value[currentRangeIndex.value]
-      if (!range) return
-
-      let nextRowIndex = range.end.rowIndex
-      let nextColId = range.end.colId
-
-      const displayedColumns = api.getAllDisplayedColumns()
-      const columnIds = displayedColumns.map((displayedColumn) => displayedColumn.getColId())
-      let colIdx = columnIds.indexOf(nextColId)
-
-      if (event.key === 'ArrowUp') nextRowIndex = Math.max(0, nextRowIndex - 1)
-      if (event.key === 'ArrowDown')
-        nextRowIndex = Math.min(api.getDisplayedRowCount() - 1, nextRowIndex + 1)
-      if (event.key === 'ArrowLeft') colIdx = Math.max(0, colIdx - 1)
-      if (event.key === 'ArrowRight') colIdx = Math.min(columnIds.length - 1, colIdx + 1)
-
-      range.end = { rowIndex: nextRowIndex, colId: columnIds[colIdx] }
-      updateSelectionRects()
-      api.refreshCells({ force: true })
-
-      api.ensureIndexVisible(range.end.rowIndex)
-      api.ensureColumnVisible(range.end.colId)
-    }
+    // Shift+Arrow 已移至 onKeyDownCapture（capture 階段）處理，此處不再處理
   }
 
   // ─── Cell Focused: sync selection when AG Grid moves focus (Arrow keys etc.) ──
@@ -1369,21 +1474,26 @@
   const onCellFocused = (event: CellFocusedEvent<GridRowData>) => {
     if (_suppressFocusSync) return
     if (isSelecting.value) return
-    // rowIndex null means focus went to a pinned row or header
     if (event.rowIndex === null || event.rowPinned) return
-    const colId =
-      event.column instanceof Object && 'getColId' in event.column
-        ? (event.column as Column).getColId()
-        : null
-    if (!colId) return
+
+    const col = event.column as Column | null
+    if (!col || typeof col.getColId !== 'function') return
+    const colId = col.getColId()
+
     const newPoint: CellPoint = { rowIndex: event.rowIndex, colId }
+
+    // 若目前是多範圍選取狀態（Ctrl+點擊產生），僅更新 focus 記錄不重置整組 selectedRanges
+    // （有多個範圍時 onCellFocused 不應該清除其它範圍）
+    if (selectedRanges.value.length > 1) {
+      // 每次 focus 移動到新格，不重置多選狀態，只記錄 currentRangeIndex
+      return
+    }
+
+    // 單範圍或無範圍時：正常同步
     selectedRanges.value = [{ start: newPoint, end: newPoint }]
-    currentRangeIndex.value = 0 // Set to 0 to allow Shift+Arrow to find this range
+    currentRangeIndex.value = 0
     updateSelectionRects()
 
-    // Optimization: Avoid refreshing for single cell focus to preserve double-click.
-    // The focus border from AG Grid is already sufficient visual feedback.
-    // We only need a full refresh for multi-cell ranges.
     const isSingleCell =
       selectedRanges.value.length === 1 &&
       selectedRanges.value[0].start.rowIndex === selectedRanges.value[0].end.rowIndex &&
@@ -1425,6 +1535,7 @@
       :suppress-row-click-selection="true"
       :enable-cell-text-selection="false"
       :ensure-dom-order="true"
+      :undo-redo-cell-editing="false"
       @grid-ready="onGridReady"
       @body-scroll="onBodyScroll"
       @column-resized="updateAllRects"
@@ -1548,7 +1659,7 @@
     position: absolute;
     pointer-events: none;
     border: 2px dashed hsl(var(--primary));
-    background-color: rgba(37, 99, 235, 0.05);
+    background-color: color-mix(in srgb, hsl(var(--primary)) 5%, transparent);
     z-index: 150;
   }
 
@@ -1576,14 +1687,14 @@
   /* Custom Range Selection Style: background tint only, border handled by overlay */
   .ag-theme-quartz .ag-cell.custom-range-selected,
   .ag-theme-quartz-dark .ag-cell.custom-range-selected {
-    background-color: rgba(37, 99, 235, 0.12) !important;
+    background-color: color-mix(in srgb, hsl(var(--primary)) 12%, transparent) !important;
   }
 
   /* Selection range overlay: single outer border around the entire selection */
   .selection-range-overlay {
     position: absolute;
     pointer-events: none;
-    border: 2px solid rgba(37, 99, 235, 0.8);
+    border: 2px solid color-mix(in srgb, hsl(var(--primary)) 80%, transparent);
     z-index: 10;
   }
 
@@ -1608,7 +1719,7 @@
   /* Focus cell should still have its primary border */
   .ag-theme-quartz .ag-cell-focus.custom-range-selected,
   .ag-theme-quartz-dark .ag-cell-focus.custom-range-selected {
-    background-color: rgba(37, 99, 235, 0.2) !important;
+    background-color: color-mix(in srgb, hsl(var(--primary)) 20%, transparent) !important;
   }
 
   /* Drag indicator - help user know they are selecting */

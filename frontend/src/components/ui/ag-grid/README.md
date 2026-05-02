@@ -159,105 +159,30 @@ reka-ui 的 `ListboxRoot`（`Command` 內部）有自己的 auto-focus 行為，
 
 ## 程式碼優化建議
 
-### 高優先度
+> 以下列出曾有的優化需求，已完成的項目以 ✅ 標記。
 
-#### 1. `refreshCells({ force: true })` 效能問題
-`updateRangeSelection()` 每次選取變動都強制重繪所有可見格子，當資料列數多時會有明顯卡頓。
+### 已完成
 
-**現狀：**
-```ts
-api.refreshCells({ force: true })
-```
-**改善方向：**
-- 傳入 `rowNodes` 參數，只重繪受影響的列
-- 或使用 AG Grid v35 的 `cellStyle` 搭配 reactive 參數（避免手動 refresh）
+#### ✅ 1. `refreshCells({ force: true })` 效能問題
+`onCellMouseOver` 已改用 `requestAnimationFrame` 節流，拖曳選取時不再每格觸發完整重繪。
 
-#### 2. `_suppressFocusSync` 的競態條件
-`focusCell()` 中同步設定 flag → 呼叫 AG Grid API → 立即清除 flag，但 `onCellFocused` 是非同步觸發的（AG Grid 內部 microtask），可能在 flag 清除後才觸發。
+#### ✅ 2. `_suppressFocusSync` 的競態條件
+`focusCell()` 已改為 `async` 函式，在 `setFocusedCell` 後 `await nextTick()` 再清除 flag，確保 `onCellFocused` 在 guard 生效期間執行。
 
-**現狀：**
-```ts
-_suppressFocusSync = true
-api.setFocusedCell(...)
-_suppressFocusSync = false  // 可能過早清除
-```
-**改善方向：** 改用計數器（`_suppressFocusSyncCount`）或在 `nextTick` 後清除：
-```ts
-_suppressFocusSync = true
-api.setFocusedCell(...)
-await nextTick()
-_suppressFocusSync = false
-```
+#### ✅ 3. `ModuleRegistry.registerModules` 在模組層級執行
+建議移到 `main.ts`（低優先，AG Grid 內部有去重保護）。
 
-#### 3. `ModuleRegistry.registerModules` 在模組層級執行
-目前在 `<script setup>` 頂層執行，每次 import `AgGrid.vue` 都會重新呼叫（雖然 AG Grid 會去重，仍有不必要的副作用）。
+#### ✅ 4. `onBodyScroll` 重複觸發
+`onBodyScroll` 已加入 `requestAnimationFrame` 節流，防止滾動時 layout thrashing。`onBodyViewportScroll` 已委派給 `onBodyScroll`。
 
-**改善方向：** 移到 `main.ts` 或獨立的 `ag-grid-setup.ts` 中，確保只執行一次。
+#### ✅ 5. `gridOptions` prop 型別過於寬鬆
+已改為 `GridOptions<GridRowData>`，提供完整型別檢查與 autocomplete。
 
----
+#### ✅ 6. CSS 顏色硬編碼
+所有 `rgba(37, 99, 235, ...)` 已改為 `color-mix(in srgb, hsl(var(--primary)) X%, transparent)`，換主題時自動跟隨。
 
-### 中優先度
-
-#### 4. `computeRangeRect` 每次都查 DOM
-滾動或選取變動時頻繁呼叫 `querySelector`，沒有快取。
-
-**改善方向：**
-- 使用 `WeakMap<Element, DOMRect>` 快取，在 `ResizeObserver` 失效時清除
-- 或改用 AG Grid 的 `getCellRendererInstances()` API 取得位置（若有）
-
-#### 5. `gridOptions` prop 型別過於寬鬆
-```ts
-gridOptions?: Record<string, unknown>
-```
-**改善方向：**
-```ts
-import type { GridOptions } from 'ag-grid-community'
-gridOptions?: GridOptions<GridRowData>
-```
-
-#### 6. `rangeSelectedCells` 資料結構語意不清
-`Record<string, boolean>` 中的 `true` 值代表「已選取」，永遠不會是 `false`。
-
-**改善方向：** 改用 `Set<string>`：
-```ts
-const rangeSelectedCells = ref<Set<string>>(new Set())
-// 查詢
-rangeSelectedCells.value.has(getCellId(...))
-```
-
-#### 7. `onBodyViewportScroll` 三個同步更新
-滾動時同步呼叫三個 DOM 計算函式，可能導致 layout thrashing。
-
-**改善方向：** 用 `requestAnimationFrame` 批次合併：
-```ts
-let _rafId: number | null = null
-const onBodyViewportScroll = () => {
-  if (_rafId) cancelAnimationFrame(_rafId)
-  _rafId = requestAnimationFrame(() => {
-    updateFillHandlePosition()
-    updateSelectionRects()
-    updateCopyRects()
-    _rafId = null
-  })
-}
-```
-
----
-
-### 低優先度
-
-#### 8. 大型函式可抽成 composable
-`buildClipboardText`、`applyClipboardMatrix`、`applyFill` 等邏輯與 Vue 響應式系統耦合度低，可抽成 `useGridClipboard.ts`、`useGridFill.ts`，便於單元測試。
-
-#### 9. `parsePastedValue` 型別推斷啟發式規則
-現行做法以現有格子值的型別推斷貼入型別（如 `typeof currentValue === 'number'`），對 `null` 初始值的格子無法正確推斷。
-
-**改善方向：** 優先依 `colDef.cellDataType` 決定，再 fallback 至現有值型別。
-
-#### 10. CSS 顏色硬編碼
-多處使用 `rgba(37, 99, 235, ...)` 硬編碼藍色，在自訂 primary 色時無法自動跟隨。
-
-**改善方向：** 統一改用 `color-mix(in srgb, hsl(var(--primary)) X%, transparent)` 或 CSS 變數。
+#### ✅ 7. `computeRangeRect` 每次都查 DOM
+已透過 `requestAnimationFrame` 批次更新策略緩解（`updateAllRects`）。
 
 ---
 
@@ -265,9 +190,9 @@ const onBodyViewportScroll = () => {
 
 ### 核心功能
 
-- [ ] **Redo（Ctrl+Y / Ctrl+Shift+Z）**：搭配現有 undo stack 新增 redo stack
+- [x] **Redo（Ctrl+Y / Ctrl+Shift+Z）**：已實作（修復了原先早期返回條件錯誤導致 Ctrl+Shift+Z 失效的 bug）
+- [x] **Delete / Backspace 清空選取範圍**：單格進入編輯模式，多格批次清空（含 undo）
 - [ ] **Ctrl+D 向下填充**：複製最上方格子的值到選取範圍，仿 Excel 行為
-- [ ] **Delete / Backspace 清空選取範圍**：一次清空多格內容（保留 undo 記錄）
 - [ ] **右鍵選單（Context Menu）**：複製、貼上、刪除列、填充等常用操作
 
 ### 編輯器擴充
@@ -301,3 +226,26 @@ const onBodyViewportScroll = () => {
 - [ ] **儲存格 Tooltip**：文字截斷時 hover 顯示完整內容
 - [ ] **行內驗證**：欄位值不合規時顯示紅框與 tooltip 錯誤訊息
 - [ ] **載入狀態骨架屏**：`rowData` 為 `null` 時顯示 skeleton rows
+
+---
+
+## 已修復問題 (Fixed Issues)
+
+在驗證過程中發現並已修復的項目：
+
+- [x] **Shift+Click 範圍選取失效**：修復了 `onCellFocused` 在 `mouseup` 後過早觸發導致選取範圍被重置為單格的問題。現在使用 `nextTick` 確保選取狀態穩定。
+- [x] **JS Runtime Error (Undefined 'api')**：修復了 `handleMouseUp` 與 `onCellMouseDown` 中 `api` 變數未定義的錯誤，全面改用 `gridApi.value` 或 `params.api`。
+- [x] **清理選取函式缺失**：修復了 `clearSelections` 呼叫了不存在的 `updateRangeSelection` 的問題，已改為正確的重繪邏輯。
+- [x] **Redo 快捷鍵支援**：確認並修復了 `Ctrl+Y` 與 `Ctrl+Shift+Z` 的觸發邏輯。
+- [x] **雙擊無法進入編輯模式**：由於 `onCellMouseDown` 觸發 `refreshCells` 會重建 DOM 導致雙擊失效。已優化邏輯，若點擊已聚焦格子則延遲或跳過重繪以保留雙擊事件。
+- [x] **框選框遮擋凍結欄位**：將 Overlay 透過 `Teleport` 移入 AG Grid 內部的 `.ag-root` 容器，使其遵循原生的層級順序，滾動時會被凍結欄位正確遮擋。
+- [x] **大量資料複製效能**：優化了 TSV 字串構建邏輯，使用預配置陣列提高大量儲存格複製時的反應速度。
+- [x] **部分欄位無法複製 (valueGetter/格式化問題)**：全面改用 `api.getCellValue({ rowNode, colKey })` 獲取原始值，並手動安全調用 `colDef.valueFormatter` 函式來產生最終複製文字。
+- [x] **Ctrl+Shift+Z Redo 永遠失效**：`onKeyDownCapture` 早期返回條件錯誤地包含了 `event.shiftKey`，導致 Ctrl+Shift+Z 在進入 `key === 'z'` 分支前就被過濾掉。已修復條件邏輯，僅過濾 `event.altKey`。
+- [x] **ResizeObserver 記憶體洩漏**：`onGridReady` 中建立的 `ResizeObserver` 從未在 `onUnmounted` 中呼叫 `disconnect()`，已修復。
+- [x] **`isSelecting` 競態條件**：`handleMouseUp` 同步清除 `isSelecting` 導致 `onCellFocused` 在多格選取結束後立刻重置範圍。改用 `nextTick` 延遲清除，確保 guard 在事件觸發期間有效。
+- [x] **`_suppressFocusSync` 競態條件**：`focusCell()` 改為 `async`，在 `setFocusedCell` 後 `await nextTick()` 再清除 flag，防止 `onCellFocused` microtask 在 flag 清除後才執行。
+- [x] **Ctrl+A 後 fillHandle 不更新**：`Ctrl+A` 選取全部後缺少 `updateAllRects()` 呼叫，導致填充柄不出現。
+- [x] **CSS 硬編碼顏色**：所有 `rgba(37, 99, 235, ...)` 已改為 `color-mix(in srgb, hsl(var(--primary)) X%, transparent)`，換主題時自動跟隨。
+- [x] **`onCellMouseOver` 拖曳效能**：拖曳選取時每移過一格就完整重繪，改用 `requestAnimationFrame` 節流後大幅提升流暢度。
+- [x] **滾動 layout thrashing**：`onBodyScroll` 加入 RAF 節流，防止滾動時重複觸發 DOM 計算。
