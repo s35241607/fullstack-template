@@ -41,7 +41,6 @@
   const open = ref(false)
   const searchQuery = ref('')
   const wrapperRef = ref<HTMLDivElement | null>(null)
-  const inputRef = ref<HTMLInputElement | null>(null)
   const dropdownRef = ref<HTMLDivElement | null>(null)
   const highlightIndex = ref(-1)
 

@@ -1,4 +1,4 @@
-import { ref, readonly } from 'vue'
+import { ref } from 'vue'
 import { useAsyncState } from '@vueuse/core'
 import {
   ordersApi,
@@ -55,7 +55,7 @@ export function usePoManagement() {
   }
 
   return {
-    orders: readonly(orders),
+    orders: orders,
     isLoading,
     error,
     refresh,

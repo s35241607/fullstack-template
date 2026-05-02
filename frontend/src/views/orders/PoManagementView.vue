@@ -66,7 +66,6 @@
     CalendarClock,
     Download,
     XCircle,
-    ExternalLink,
   } from 'lucide-vue-next'
 
   type ReceiptRow = Readonly<PurchaseOrderReceipt>

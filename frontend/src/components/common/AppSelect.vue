@@ -49,7 +49,7 @@
   <Select
     :model-value="modelValue"
     :disabled="disabled"
-    @update:model-value="emit('update:modelValue', $event)"
+    @update:model-value="emit('update:modelValue', $event as string)"
   >
     <SelectTrigger
       :class="

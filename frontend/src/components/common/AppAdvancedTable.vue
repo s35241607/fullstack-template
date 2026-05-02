@@ -598,7 +598,7 @@
               </tr>
 
               <template v-if="!groupBy || !collapsedGroups.has(group.key)">
-                <template v-for="(row, ri) in group.rows" :key="row[rowKey]">
+                <template v-for="row in group.rows" :key="row[rowKey]">
                   <tr
                     :class="
                       cn(
