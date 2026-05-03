@@ -40,10 +40,14 @@
     gridOptions?: GridOptions
   }
 
-  withDefaults(defineProps<Props>(), {
+  const props = withDefaults(defineProps<Props>(), {
     height: '500px',
     gridOptions: () => ({}),
   })
+
+  const emit = defineEmits<{
+    (e: 'data-changed'): void
+  }>()
 
   const isDark = useDark()
 
@@ -81,6 +85,22 @@
   const currentRangeIndex = ref(-1)
   const gridReady = ref(false)
 
+  function clearSelectionState() {
+    selectedRanges.value = []
+    copyRanges.value = []
+    fillSourceRange.value = null
+    fillPreviewRange.value = null
+    currentRangeIndex.value = -1
+    if (typeof updateAllRects === 'function') updateAllRects()
+  }
+
+  // Clear selection state when rowData changes
+  watch(
+    () => props.rowData,
+    () => clearSelectionState(),
+    { deep: false }
+  )
+
   // ResizeObserver — 宣告在模組層級，以便 onUnmounted 中清除（避免記憶體洩漏）
   let resizeObserver: ResizeObserver | null = null
 
@@ -108,7 +128,14 @@
 
   // ─── Undo Stack ───────────────────────────────────────────────────────────────
 
-  type UndoEntry = { rowIndex: number; colId: string; oldValue: unknown; newValue: unknown }[]
+  type UndoEntry = {
+    rowId: string | undefined
+    rowData: GridRowData
+    rowIndex: number | null
+    colId: string
+    oldValue: unknown
+    newValue: unknown
+  }[]
   const undoStack: UndoEntry[] = []
   const redoStack: UndoEntry[] = []
   const MAX_UNDO_STEPS = 100
@@ -118,6 +145,28 @@
     undoStack.push(entries)
     redoStack.length = 0 // Clear redo stack on new action
     if (undoStack.length > MAX_UNDO_STEPS) undoStack.shift()
+  }
+
+  const getRowNodeForUndoRedo = (api: GridApi, entry: UndoEntry[0]): IRowNode | undefined => {
+    let rowNode: IRowNode | undefined
+
+    if (entry.rowId !== undefined) {
+      rowNode = api.getRowNode(entry.rowId)
+    }
+
+    if (!rowNode) {
+      api.forEachNode((node) => {
+        if (node.data === entry.rowData) {
+          rowNode = node
+        }
+      })
+    }
+
+    if (!rowNode && entry.rowIndex !== null) {
+      rowNode = api.getDisplayedRowAtIndex(entry.rowIndex)
+    }
+
+    return rowNode
   }
 
   const applyUndo = () => {
@@ -132,15 +181,16 @@
 
     api.stopEditing()
 
-    for (const { rowIndex, colId, oldValue } of entries) {
-      const rowNode = api.getDisplayedRowAtIndex(rowIndex)
-      const column = colMap.get(colId)
+    for (const entry of entries) {
+      const rowNode = getRowNodeForUndoRedo(api, entry)
+      const column = colMap.get(entry.colId)
       if (!rowNode || !column) continue
-      rowNode.setDataValue(column, oldValue, 'undo')
+      rowNode.setDataValue(column, entry.oldValue, 'undo')
     }
 
     // 必須強制重繪，否則 cellClassRules 不會重新評估，視覺上看起來像是沒有反應
     api.refreshCells({ force: true })
+    emit('data-changed')
   }
 
   const applyRedo = () => {
@@ -155,14 +205,15 @@
 
     api.stopEditing()
 
-    for (const { rowIndex, colId, newValue } of entries) {
-      const rowNode = api.getDisplayedRowAtIndex(rowIndex)
-      const column = colMap.get(colId)
+    for (const entry of entries) {
+      const rowNode = getRowNodeForUndoRedo(api, entry)
+      const column = colMap.get(entry.colId)
       if (!rowNode || !column) continue
-      rowNode.setDataValue(column, newValue, 'redo')
+      rowNode.setDataValue(column, entry.newValue, 'redo')
     }
 
     api.refreshCells({ force: true })
+    emit('data-changed')
   }
 
   const getDisplayedColumns = (): Column[] => {
@@ -875,6 +926,8 @@
         const rawValue = sourceRow?.[sourceColOffset] ?? ''
         const newValue = parsePastedValue(rowNode, column, rawValue)
         undoEntries.push({
+          rowId: rowNode.id,
+          rowData: rowNode.data,
           rowIndex,
           colId,
           oldValue: getCellRawValue(rowNode, column),
@@ -885,6 +938,7 @@
     }
 
     pushUndo(undoEntries)
+    emit('data-changed')
 
     // Update selection to cover the full filled area (source + fill area)
     const allRowStart = Math.min(normalizedSource.rowStart, normalizedPreview.rowStart)
@@ -1091,12 +1145,15 @@
 
     pushUndo([
       {
-        rowIndex: params.node.rowIndex!,
+        rowId: params.node.id,
+        rowData: params.node.data,
+        rowIndex: params.node.rowIndex,
         colId: params.column.getColId(),
         oldValue: params.oldValue,
         newValue: params.newValue,
       },
     ])
+    emit('data-changed')
   }
 
   const onCellEditingStarted = () => {
@@ -1242,17 +1299,54 @@
   }
 
   const parseClipboardText = (text: string): ClipboardMatrix => {
-    if (!text) {
-      return []
+    if (!text) return []
+
+    const matrix: string[][] = []
+    let currentRow: string[] = []
+    let currentCell = ''
+    let inQuotes = false
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i]
+      const nextChar = text[i + 1]
+
+      if (inQuotes) {
+        if (char === '"' && nextChar === '"') {
+          currentCell += '"'
+          i++
+        } else if (char === '"') {
+          inQuotes = false
+        } else {
+          currentCell += char
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true
+        } else if (char === '\t') {
+          currentRow.push(currentCell)
+          currentCell = ''
+        } else if (char === '\n' || (char === '\r' && nextChar === '\n')) {
+          if (char === '\r') i++
+          currentRow.push(currentCell)
+          matrix.push(currentRow)
+          currentRow = []
+          currentCell = ''
+        } else {
+          currentCell += char
+        }
+      }
     }
 
-    const lines = text.replace(/\r\n?/g, '\n').split('\n')
-
-    while (lines.length > 0 && lines[lines.length - 1] === '') {
-      lines.pop()
+    if (currentCell !== '' || currentRow.length > 0) {
+      currentRow.push(currentCell)
+      matrix.push(currentRow)
     }
 
-    return lines.map((line) => line.split('\t'))
+    if (matrix.length > 0 && matrix[matrix.length - 1].length === 1 && matrix[matrix.length - 1][0] === '') {
+      matrix.pop()
+    }
+
+    return matrix
   }
 
   const isClipboardEventFromEditor = (target: EventTarget | null): boolean => {
@@ -1421,6 +1515,8 @@
             sourceRow[(columnIndex - normalizedRange.colStart) % sourceRow.length] ?? ''
           const newValue = parsePastedValue(rowNode, targetColumn, rawValue)
           undoEntries.push({
+            rowId: rowNode.id,
+            rowData: rowNode.data,
             rowIndex,
             colId: targetColumn.getColId(),
             oldValue: getCellRawValue(rowNode, targetColumn),
@@ -1451,6 +1547,8 @@
           const rawValue = sourceRow[columnOffset]
           const newValue = parsePastedValue(rowNode, targetColumn, rawValue)
           undoEntries.push({
+            rowId: rowNode.id,
+            rowData: rowNode.data,
             rowIndex: targetRowIndex,
             colId: targetColumn.getColId(),
             oldValue: getCellRawValue(rowNode, targetColumn),
@@ -1467,6 +1565,7 @@
     }
 
     pushUndo(undoEntries)
+    emit('data-changed')
 
     if (!shouldRepeatToFillSelection) {
       selectedRanges.value = [{ start: anchor, end: lastVisited }]
@@ -1636,6 +1735,8 @@
             if (!column || !canPasteIntoCell(rowNode, column)) return
 
             undoEntries.push({
+              rowId: rowNode.id,
+              rowData: rowNode.data,
               rowIndex: r,
               colId,
               oldValue: getCellRawValue(rowNode, column),
@@ -1648,6 +1749,7 @@
 
       if (undoEntries.length > 0) {
         pushUndo(undoEntries)
+        emit('data-changed')
       }
       return
     }
@@ -1886,6 +1988,9 @@
       @column-moved="updateAllRects"
       @column-visible="updateAllRects"
       @displayed-columns-changed="updateAllRects"
+      @filter-changed="clearSelectionState"
+      @sort-changed="clearSelectionState"
+      @model-updated="updateAllRects"
       @cell-key-down="onCellKeyDown"
       @cell-mouse-down="onCellMouseDown"
       @cell-mouse-over="onCellMouseOver"
