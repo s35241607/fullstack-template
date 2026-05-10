@@ -72,6 +72,13 @@ export const appNavGroups: AppNavGroup[] = [
         description: 'AG Grid 分頁查詢與動態下拉展示',
       },
       {
+        id: 'ag-grid-po-receipt-pivot',
+        name: 'nav.items.agGridPoReceiptPivot',
+        path: '/ag-grid-po-receipt-pivot',
+        icon: Grid,
+        description: 'nav.desc.agGridPoReceiptPivot',
+      },
+      {
         id: 'demo',
         name: 'Demo 展示',
         path: '/demo',

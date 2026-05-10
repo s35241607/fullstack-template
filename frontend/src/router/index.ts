@@ -62,6 +62,12 @@ const router = createRouter({
       meta: { breadcrumb: 'AG Grid API 展示' },
     },
     {
+      path: '/ag-grid-po-receipt-pivot',
+      name: 'ag-grid-po-receipt-pivot',
+      component: () => import('@/views/AgGridPoReceiptPivotView.vue'),
+      meta: { breadcrumb: 'nav.items.agGridPoReceiptPivot' },
+    },
+    {
       path: '/demo',
       name: 'demo',
       component: () => import('@/views/DemoView.vue'),

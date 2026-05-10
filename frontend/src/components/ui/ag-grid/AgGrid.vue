@@ -18,6 +18,14 @@
     type Theme,
     type ValueParserParams,
   } from 'ag-grid-community'
+  import {
+    ColumnsToolPanelModule,
+    FiltersToolPanelModule,
+    LicenseManager,
+    PivotModule,
+    RowGroupingModule,
+    SideBarModule,
+  } from 'ag-grid-enterprise'
   import { computed, ref, onUnmounted, nextTick, watch } from 'vue'
   import { useDark } from '@vueuse/core'
   import type {
@@ -26,8 +34,20 @@
     AgGridRowData as GridRowData,
   } from './types'
 
-  // Register all required community modules
-  ModuleRegistry.registerModules([AllCommunityModule])
+  const agGridEnterpriseLicenseKey = import.meta.env.VITE_AG_GRID_LICENSE_KEY?.trim()
+
+  if (agGridEnterpriseLicenseKey) {
+    LicenseManager.setLicenseKey(agGridEnterpriseLicenseKey)
+  }
+
+  ModuleRegistry.registerModules([
+    AllCommunityModule,
+    RowGroupingModule,
+    PivotModule,
+    SideBarModule,
+    ColumnsToolPanelModule,
+    FiltersToolPanelModule,
+  ])
 
   type CellPoint = { rowIndex: number; colId: string }
   type CellRange = { start: CellPoint; end: CellPoint }
@@ -98,7 +118,7 @@
   watch(
     () => props.rowData,
     () => clearSelectionState(),
-    { deep: false }
+    { deep: false },
   )
 
   // ResizeObserver — 宣告在模組層級，以便 onUnmounted 中清除（避免記憶體洩漏）
@@ -130,7 +150,7 @@
 
   type UndoEntry = {
     rowId: string | undefined
-    rowData: GridRowData
+    rowData: GridRowData | undefined
     rowIndex: number | null
     colId: string
     oldValue: unknown
@@ -240,8 +260,9 @@
 
   const getCellElement = (rowIndex: number, colId: string): HTMLElement | null => {
     return (
-      gridContainer.value?.querySelector<HTMLElement>(`[row-index="${rowIndex}"] [col-id="${colId}"]`) ??
-      null
+      gridContainer.value?.querySelector<HTMLElement>(
+        `[row-index="${rowIndex}"] [col-id="${colId}"]`,
+      ) ?? null
     )
   }
 
@@ -452,7 +473,8 @@
       const preferredIndex = selectedRanges.value.findIndex((range) =>
         isPointInRange(preferredPoint, range),
       )
-      currentRangeIndex.value = preferredIndex >= 0 ? preferredIndex : selectedRanges.value.length - 1
+      currentRangeIndex.value =
+        preferredIndex >= 0 ? preferredIndex : selectedRanges.value.length - 1
       return
     }
 
@@ -1060,9 +1082,7 @@
     _mouseDownPoint = { rowIndex: node.rowIndex, colId: column.getId() }
     const isMulti = event.ctrlKey || event.metaKey
     const newPoint: CellPoint = { rowIndex: node.rowIndex, colId: column.getId() }
-    const modifiedBaseRanges = cloneRanges(
-      _rangesBeforeModifiedMouseDown ?? selectedRanges.value,
-    )
+    const modifiedBaseRanges = cloneRanges(_rangesBeforeModifiedMouseDown ?? selectedRanges.value)
 
     if (event.shiftKey && modifiedBaseRanges.length > 0) {
       // Shift+點擊：擴展最後一個範圍的終點
@@ -1207,7 +1227,7 @@
       return ''
     }
 
-    const colDef = column.getColDef() as GridColumnDef
+    const colDef = column.getColDef() as ColDef<GridRowData>
     if (colDef.valueFormatter && typeof colDef.valueFormatter === 'function') {
       try {
         // Manually invoke the formatter with the standard AG Grid params object
@@ -1272,7 +1292,7 @@
 
       // 找出所有被涵蓋的欄位（保持顯示順序）
       const coveredColIds = allColumnIds.filter((colId) =>
-        sortedRows.some((r) => cellValues.has(`${r}:${colId}`))
+        sortedRows.some((r) => cellValues.has(`${r}:${colId}`)),
       )
 
       return sortedRows
@@ -1342,7 +1362,11 @@
       matrix.push(currentRow)
     }
 
-    if (matrix.length > 0 && matrix[matrix.length - 1].length === 1 && matrix[matrix.length - 1][0] === '') {
+    if (
+      matrix.length > 0 &&
+      matrix[matrix.length - 1].length === 1 &&
+      matrix[matrix.length - 1][0] === ''
+    ) {
       matrix.pop()
     }
 
@@ -1395,7 +1419,7 @@
     column: Column,
     rawValue: string,
   ): unknown => {
-    const colDef = column.getColDef() as GridColumnDef
+    const colDef = column.getColDef() as ColDef<GridRowData>
     const currentValue = getCellRawValue(rowNode, column)
 
     if (typeof colDef.valueParser === 'function' && colDef.useValueParserForImport !== false) {
@@ -1595,7 +1619,9 @@
     // 在 capture 階段攔截就能完全阻止 AG Grid 看到此事件。
     if (
       event.shiftKey &&
-      !event.ctrlKey && !event.metaKey && !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
       ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)
     ) {
       const api = gridApi.value
@@ -1641,7 +1667,8 @@
       let colIdx = columnIds.indexOf(liveRange.end.colId)
 
       if (event.key === 'ArrowUp') nextRowIndex = Math.max(0, nextRowIndex - 1)
-      if (event.key === 'ArrowDown') nextRowIndex = Math.min(api.getDisplayedRowCount() - 1, nextRowIndex + 1)
+      if (event.key === 'ArrowDown')
+        nextRowIndex = Math.min(api.getDisplayedRowCount() - 1, nextRowIndex + 1)
       if (event.key === 'ArrowLeft') colIdx = Math.max(0, colIdx - 1)
       if (event.key === 'ArrowRight') colIdx = Math.min(columnIds.length - 1, colIdx + 1)
 
@@ -1896,10 +1923,12 @@
       const rowCount = api.getDisplayedRowCount()
       const allColumns = api.getAllDisplayedColumns()
       if (rowCount > 0 && allColumns.length > 0) {
-        selectedRanges.value = [{
-          start: { rowIndex: 0, colId: allColumns[0].getColId() },
-          end: { rowIndex: rowCount - 1, colId: allColumns[allColumns.length - 1].getColId() }
-        }]
+        selectedRanges.value = [
+          {
+            start: { rowIndex: 0, colId: allColumns[0].getColId() },
+            end: { rowIndex: rowCount - 1, colId: allColumns[allColumns.length - 1].getColId() },
+          },
+        ]
         currentRangeIndex.value = 0
         updateSelectionRects()
         api.refreshCells({ force: true })
@@ -2016,7 +2045,13 @@
       >
         <!-- Fill Handle: small square at bottom-right corner of selection -->
         <div
-          v-if="fillHandlePos && selectedRanges.length > 0 && !fillDragging && !isSelecting && !isEditing"
+          v-if="
+            fillHandlePos &&
+            selectedRanges.length > 0 &&
+            !fillDragging &&
+            !isSelecting &&
+            !isEditing
+          "
           class="fill-handle"
           :style="{ left: fillHandlePos.left + 'px', top: fillHandlePos.top + 'px' }"
           @mousedown="onFillHandleMouseDown"

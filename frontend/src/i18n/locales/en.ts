@@ -10,11 +10,14 @@ const en = {
       home: 'Dashboard',
       poManagement: 'PO Management',
       about: 'About',
+      agGridPoReceiptPivot: 'PO Receipt Matrix Demo',
     },
     desc: {
       home: 'Overview dashboard',
       poManagement: 'Purchase order line and delivery control',
       about: 'About this system',
+      agGridPoReceiptPivot:
+        'AG Grid row-spanned view for PO lines, schedule splits, and target dates',
     },
   },
 
@@ -91,7 +94,8 @@ const en = {
       simpleTitle: 'Simple Table',
       simpleDesc: 'Wraps shadcn Table, supports custom cell slots.',
       advancedTitle: 'Advanced Table — Notion Style',
-      advancedDesc: 'Sorting, frozen columns, grouping, inline edit, drag-to-reorder, checkbox, keyboard nav, search.',
+      advancedDesc:
+        'Sorting, frozen columns, grouping, inline edit, drag-to-reorder, checkbox, keyboard nav, search.',
       simulateLoading: 'Simulate Loading',
       editLog: 'Edit History',
       features: {
@@ -146,7 +150,7 @@ const en = {
     tabs: {
       list: 'List View',
       calendar: 'Delivery Calendar',
-      calendarSoon: 'Soon',
+      calendarSoon: 'Coming soon',
     },
     stats: {
       orders: 'PO Headers',
@@ -249,6 +253,100 @@ const en = {
       pullInSuccess: 'Pull in saved.',
       resetSuccess: 'Demo PO data reset.',
       scheduleUpdated: 'Schedule updated.',
+    },
+  },
+
+  poReceiptPivotDemo: {
+    title: 'PO Receipt Detail',
+    subtitle:
+      'Each PO is grouped first, then expanded into multiple lines so schedule splits and target mapping stay readable under the same PO.',
+    badge: 'Mock Matrix',
+    notes: {
+      rowGrain: 'Layout grain',
+      rowGrainValue:
+        'Each PO line is sliced by the overlap between schedule ranges and target ranges, while the line columns remain row-spanned on the left.',
+      receiptRule: 'Receipt allocation',
+      receiptRuleValue:
+        'Receipts are consumed from the earliest schedule first, then each split recalculates open quantity and trailing balance.',
+      targetMap: 'Target mapping',
+      targetMapValue:
+        'Target mapping is driven by stacked quantity ranges, so one target date can visibly continue across multiple schedule rows.',
+    },
+    filters: {
+      title: 'View controls',
+      description:
+        'Keep quick search, then narrow the result with multi-select Supplier / Buyer / Plant filters.',
+      searchLabel: 'Search',
+      searchPlaceholder: 'Search or type po:1001 supplier:tsmc target:2026-02',
+      searchHint:
+        'Supports token search and field prefixes such as po:1001 supplier:tsmc target:2026-02 gap:late.',
+      supplierLabel: 'Supplier',
+      buyerLabel: 'Buyer',
+      plantLabel: 'Plant',
+      allSuppliers: 'All suppliers',
+      allBuyers: 'All buyers',
+      allPlants: 'All plants',
+      selected: 'selected',
+      clearSelection: 'Clear selection',
+      reset: 'Reset',
+      refresh: 'Reload mock data',
+    },
+    stats: {
+      poCount: 'POs',
+      poLineCount: 'PO Lines',
+      displayRows: 'Expanded Rows',
+      scheduleCount: 'Schedule Splits',
+      targetCount: 'Target Splits',
+      openQty: 'Open Qty',
+      rtQty: 'RT Qty',
+      worstGap: 'Worst Gap',
+    },
+    grid: {
+      title: 'PO Group / Line Detail',
+      description:
+        'Rows are grouped by PO first. Schedule and target detail are sliced by stacked quantity so one target date can visibly span across multiple schedule rows.',
+      sections: {
+        line: 'Line Details',
+        schedule: 'Schedule Splits',
+        target: 'Target Mapping',
+      },
+      poGroup: 'PO',
+      poLine: 'Line',
+      supplier: 'Supplier',
+      buyer: 'Buyer',
+      plant: 'Plant',
+      item: 'Item / Description',
+      lineOrderedQty: 'Line Qty',
+      lineRtQty: 'Line RT',
+      lineOpenQty: 'Line Open',
+      scheduleNo: 'Schedule',
+      commitDate: 'Commit Date',
+      scheduleQty: 'Split Qty',
+      scheduleOpenQty: 'Open Qty',
+      scheduleRtQty: 'Received Qty',
+      scheduleBalanceQty: 'Balance Qty',
+      targetDate: 'Target Date',
+      targetQty: 'Target Qty',
+      targetRange: 'Target Range',
+      mappedQty: 'Mapped Qty',
+      mappedRange: 'Mapped Range',
+      targetGapDays: 'Gap Days',
+      targetGapStatus: 'Gap Status',
+      scheduleSplitUnit: 'Schedules',
+      targetSplitUnit: 'Targets',
+      lineCountUnit: 'Lines',
+      gapStatuses: {
+        late: 'Late',
+        risk: 'At Risk',
+        onTrack: 'On Track',
+        ahead: 'Ahead',
+      },
+      empty: 'No PO receipt matrix rows match the current filters.',
+    },
+    footer: {
+      totalRows: 'mapping rows',
+      loadedAt: 'Loaded at',
+      notLoaded: 'Not loaded',
     },
   },
 
